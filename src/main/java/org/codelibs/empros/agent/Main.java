@@ -34,7 +34,9 @@ public class Main {
             } catch (InterruptedException e) {
 
             }
+            watcher.stop();
             agent.stop();
+
             latch = null;
 
             logger.info("Application is finished.");
