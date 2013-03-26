@@ -19,7 +19,13 @@ public class FileWatcher {
 
     private List<FileWatchTask> fileWatcherList;
 
+    private boolean isStarted = false;
+
     public void start(EventManager manager) {
+        if(isStarted()) {
+            return;
+        }
+
         int count = 1;
         while (true) {
             String tmp = PropertiesUtil.loadProperties("filewatcher.properties", "watchPath" + count);
@@ -47,9 +53,15 @@ public class FileWatcher {
             fw.start();
             fileWatcherList.add(fw);
         }
+
+        isStarted = true;
     }
 
     public void stop() {
+        if(!isStarted()) {
+            return;
+        }
+
         for (FileWatchTask fw : fileWatcherList) {
             fw.interrupt();
         }
@@ -62,5 +74,10 @@ public class FileWatcher {
         }
         fileWatcherList.clear();
         watchPaths.clear();
+        isStarted = false;
+    }
+
+    public boolean isStarted() {
+        return isStarted;
     }
 }

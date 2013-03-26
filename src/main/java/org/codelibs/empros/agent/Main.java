@@ -23,10 +23,16 @@ public class Main {
             EmprosAgent agent = new EmprosAgent();
             EventOperation operation = new EmprosRestApiOperation();
             agent.start(operation);
+            if(!agent.isStarted()) {
+                return;
+            }
 
             EventManager manager = agent.getEventManager();
             FileWatcher watcher = new FileWatcher();
             watcher.start(manager);
+            if(!watcher.isStarted()) {
+                return;
+            }
 
             latch = new CountDownLatch(1);
             try {

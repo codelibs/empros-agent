@@ -34,7 +34,7 @@ public class EmprosAgent {
         if(operation == null) {
             return;
         }
-        if(isStarted) {
+        if(isStarted()) {
             return;
         }
 
@@ -46,10 +46,12 @@ public class EmprosAgent {
         task = new RelayTask(manager, excuteEventTask);
         timer = new Timer();
         timer.schedule(task, poolInterval, poolInterval);
+
+        isStarted = true;
     }
 
     public void stop() {
-        if(!isStarted) {
+        if(!isStarted()) {
             return;
         }
 
@@ -67,6 +69,11 @@ public class EmprosAgent {
         task = null;
         timer = null;
         excuteEventTask = null;
+        isStarted = false;
+    }
+
+    public boolean isStarted() {
+        return isStarted;
     }
 
 }
