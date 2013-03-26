@@ -1,4 +1,4 @@
-package org.codelibs.empros.agent.filewatch;
+package org.codelibs.empros.agent.filewatcher;
 
 import java.io.File;
 import java.nio.file.FileSystem;
@@ -9,16 +9,16 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.nio.file.WatchEvent.Kind;
 
-import org.codelibs.empros.agent.manager.EventManager;
+import org.codelibs.empros.agent.event.EmprosEvent;
+import org.codelibs.empros.agent.event.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FileWatcher extends Thread {
-    private Logger logger = LoggerFactory.getLogger(FileWatcher.class);
+public class FileWatchTask extends Thread {
+    private Logger logger = LoggerFactory.getLogger(FileWatchTask.class);
 
     private Path watchPath;
 
@@ -42,7 +42,7 @@ public class FileWatcher extends Thread {
 
     private final String KIND = "kind";
 
-    public FileWatcher(String watchPath, EventManager manager) {
+    public FileWatchTask(String watchPath, EventManager manager) {
         super();
         this.watchPath = new File(watchPath).toPath();
         this.manager = manager;
@@ -101,7 +101,7 @@ public class FileWatcher extends Thread {
                                 + " " + file.getAbsolutePath());
                     }
 
-                    ConcurrentHashMap<String, String> fileEvent = new ConcurrentHashMap<String, String>();
+                    EmprosEvent fileEvent = new EmprosEvent();
                     fileEvent.put(FILE, file.getAbsolutePath().replace("\\", "/"));
                     fileEvent.put(KIND, kind);
 
@@ -120,9 +120,9 @@ public class FileWatcher extends Thread {
         logger.info("===== Finished =====");
     }
 
-    private void filteringEvent(ConcurrentHashMap<String, String> event) {
+    private void filteringEvent(EmprosEvent event) {
         synchronized (manager) {
-            List<Map<String, String>> eventList = manager.getEvents(false);
+            List<EmprosEvent> eventList = manager.getEvents(false);
 
             boolean isExsists = false;
 

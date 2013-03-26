@@ -21,6 +21,8 @@ import org.codelibs.empros.agent.operation.EventOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.codelibs.empros.agent.event.EmprosEvent;
+
 public class EmprosRestApiOperation implements EventOperation {
     private Logger logger = LoggerFactory
             .getLogger(EmprosRestApiOperation.class);
@@ -32,7 +34,8 @@ public class EmprosRestApiOperation implements EventOperation {
 
     private int requestInterval = 100;
 
-    public void excute(List<Map<String, String>> events) {
+    @Override
+    public void excute(List<EmprosEvent> events) {
         HttpClient httpClient = null;
         try {
             int start = 0;
@@ -52,7 +55,7 @@ public class EmprosRestApiOperation implements EventOperation {
                 if (start + eventCapacity < events.size()) {
                     end = start + eventCapacity;
                 } else {
-                    end = events.size() - 1;
+                    end = events.size();
                 }
 
                 String json = generateJson(events.subList(start, end));
@@ -77,8 +80,8 @@ public class EmprosRestApiOperation implements EventOperation {
                 httpClient.getConnectionManager().shutdown();
                 httpClient = null;
 
-                if (end < events.size() - 1) {
-                    start = end + 1;
+                if (end < events.size()) {
+                    start = end;
                     Thread.sleep(requestInterval);
                 } else {
                     break;
@@ -99,11 +102,11 @@ public class EmprosRestApiOperation implements EventOperation {
         }
     }
 
-    private String generateJson(List<Map<String, String>> events) {
+    private String generateJson(List<EmprosEvent> events) {
         StringBuilder jsonBuf = new StringBuilder();
         jsonBuf.append("[");
         for (int i = 0; i < events.size(); i++) {
-            Map<String, String> event = events.get(i);
+            EmprosEvent event = events.get(i);
 
             if (i > 0) {
                 jsonBuf.append(",");

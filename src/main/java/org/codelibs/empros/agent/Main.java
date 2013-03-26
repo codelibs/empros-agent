@@ -2,8 +2,8 @@ package org.codelibs.empros.agent;
 
 import java.util.concurrent.CountDownLatch;
 
-import org.codelibs.empros.agent.filewatch.FileWatchAgent;
-import org.codelibs.empros.agent.manager.EventManager;
+import org.codelibs.empros.agent.event.EventManager;
+import org.codelibs.empros.agent.filewatcher.FileWatcher;
 import org.codelibs.empros.agent.operation.EventOperation;
 import org.codelibs.empros.agent.operation.impl.EmprosRestApiOperation;
 import org.slf4j.Logger;
@@ -20,11 +20,14 @@ public class Main {
             if (latch != null) {
                 return;
             }
-            EmprosAgent agent = new FileWatchAgent();
-            EventManager manager = new EventManager();
+            EmprosAgent agent = new EmprosAgent();
             EventOperation operation = new EmprosRestApiOperation();
+            agent.start(operation);
 
-            agent.start(manager, operation);
+            EventManager manager = agent.getEventManager();
+            FileWatcher watcher = new FileWatcher();
+            watcher.start(manager);
+
             latch = new CountDownLatch(1);
             try {
                 latch.await();

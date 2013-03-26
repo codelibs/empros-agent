@@ -1,10 +1,10 @@
 package org.codelibs.empros.agent.task;
 
 import java.util.List;
-import java.util.Map;
 import java.util.TimerTask;
 
-import org.codelibs.empros.agent.manager.EventManager;
+import org.codelibs.empros.agent.event.EmprosEvent;
+import org.codelibs.empros.agent.event.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public class RelayTask extends TimerTask {
     @Override
     public void run() {
         if (manager.getEventNum() > 0) {
-            List<Map<String, String>> events = manager.getEvents(true);
+            List<EmprosEvent> events = manager.getEvents(true);
             if (logger.isDebugEnabled()) {
                 logger.debug("eventNum:" + events.size());
             }

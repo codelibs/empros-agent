@@ -1,32 +1,44 @@
 package org.codelibs.empros.agent;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
 import java.util.Timer;
 
-import org.codelibs.empros.agent.manager.EventManager;
+import org.codelibs.empros.agent.event.EventManager;
 import org.codelibs.empros.agent.operation.EventOperation;
 import org.codelibs.empros.agent.task.ExcuteEventTask;
 import org.codelibs.empros.agent.task.RelayTask;
+import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EmprosAgent {
     private Logger logger = LoggerFactory.getLogger(EmprosAgent.class);
 
-    protected long poolInterval = 60000;
+    private long poolInterval = 60000;
 
-    protected RelayTask task;
+    private RelayTask task;
 
-    protected Timer timer;
+    private Timer timer;
 
-    protected ExcuteEventTask excuteEventTask;
+    private ExcuteEventTask excuteEventTask;
 
-    public void start(EventManager manager, EventOperation operation) {
+    private EventManager manager = new EventManager();
+
+    private boolean isStarted = false;
+
+    public EventManager getEventManager() {
+        return manager;
+    }
+
+    public void start(EventOperation operation) {
         logger.info("EmprosAgent is started.");
+        if(operation == null) {
+            return;
+        }
+        if(isStarted) {
+            return;
+        }
 
-        loadProperties();
+        poolInterval = Long.parseLong(PropertiesUtil.loadProperties("agent.properties", "poolInterval"));
 
         excuteEventTask = new ExcuteEventTask(operation);
         excuteEventTask.start();
@@ -37,6 +49,10 @@ public class EmprosAgent {
     }
 
     public void stop() {
+        if(!isStarted) {
+            return;
+        }
+
         task.cancel();
         timer.cancel();
         excuteEventTask.interrupt();
@@ -47,28 +63,10 @@ public class EmprosAgent {
         } catch (InterruptedException e) {
 
         }
+
+        task = null;
+        timer = null;
+        excuteEventTask = null;
     }
 
-    protected void loadProperties() {
-        Properties prop = new Properties();
-
-        InputStream in = null;
-        try {
-            in = ClassLoader.getSystemResourceAsStream("agent.properties");
-            prop.load(in);
-
-            if (prop.getProperty("poolInterval") != null) {
-                poolInterval = Long.parseLong(prop.getProperty("poolInterval"));
-            }
-        } catch (IOException e) {
-            logger.warn("Failed to load Property file.");
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException e2) {
-            }
-        }
-    }
 }

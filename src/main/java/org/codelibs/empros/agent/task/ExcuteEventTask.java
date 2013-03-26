@@ -3,9 +3,9 @@ package org.codelibs.empros.agent.task;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import org.codelibs.empros.agent.event.EmprosEvent;
 import org.codelibs.empros.agent.operation.EventOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +15,8 @@ public class ExcuteEventTask extends Thread {
 
     private CountDownLatch latch = null;
 
-    private List<List<Map<String, String>>> requestEvents = Collections
-            .synchronizedList(new ArrayList<List<Map<String, String>>>());
+    private List<List<EmprosEvent>> requestEvents = Collections
+            .synchronizedList(new ArrayList<List<EmprosEvent>>());
 
     private EventOperation operation;
 
@@ -24,21 +24,21 @@ public class ExcuteEventTask extends Thread {
         this.operation = operation;
     }
 
-    private void excute(List<Map<String, String>> events) {
+    private void excute(List<EmprosEvent> events) {
         operation.excute(events);
     }
 
-    private synchronized List<Map<String, String>> getEvents()
+    private synchronized List<EmprosEvent> getEvents()
             throws InterruptedException {
         if (requestEvents.size() == 0) {
             return null;
         }
-        List<Map<String, String>> events = requestEvents.get(0);
+        List<EmprosEvent> events = requestEvents.get(0);
         requestEvents.remove(0);
         return events;
     }
 
-    public synchronized void setEvents(List<Map<String, String>> events) {
+    public synchronized void setEvents(List<EmprosEvent> events) {
         requestEvents.add(events);
         if (latch != null && latch.getCount() > 0) {
             latch.countDown();
@@ -55,10 +55,10 @@ public class ExcuteEventTask extends Thread {
                     throw new InterruptedException();
                 }
 
-                List<Map<String, String>> events = getEvents();
+                List<EmprosEvent> events = getEvents();
                 if (events == null) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Waiting for Event...");
+                        logger.debug("Waiting...");
                     }
                     synchronized (this) {
                         latch = new CountDownLatch(1);

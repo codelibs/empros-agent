@@ -1,10 +1,8 @@
-package org.codelibs.empros.agent.manager;
+package org.codelibs.empros.agent.event;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +10,10 @@ import org.slf4j.LoggerFactory;
 public class EventManager {
     private Logger logger = LoggerFactory.getLogger(EventManager.class);
 
-    private List<Map<String, String>> eventList = Collections
-            .synchronizedList(new ArrayList<Map<String, String>>());
+    private List<EmprosEvent> eventList = Collections
+            .synchronizedList(new ArrayList<EmprosEvent>());
 
-    public synchronized void addEvent(ConcurrentHashMap<String, String> event) {
+    public synchronized void addEvent(EmprosEvent event) {
         if (event == null) {
             logger.warn("Added event is null.");
             return;
@@ -23,9 +21,9 @@ public class EventManager {
         eventList.add(event);
     }
 
-    public synchronized List<Map<String, String>> getEvents(boolean isClear) {
-        List<Map<String, String>> list = Collections
-                .synchronizedList(new ArrayList<Map<String, String>>(eventList));
+    public synchronized List<EmprosEvent> getEvents(boolean isClear) {
+        List<EmprosEvent> list = Collections
+                .synchronizedList(new ArrayList<EmprosEvent>(eventList));
 
         if (isClear) {
             // clear events

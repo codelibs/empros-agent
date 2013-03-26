@@ -1,8 +1,9 @@
 package org.codelibs.empros.agent.operation;
 
 import java.util.List;
-import java.util.Map;
+
+import org.codelibs.empros.agent.event.EmprosEvent;
 
 public interface EventOperation {
-    void excute(List<Map<String, String>> events);
+    void excute(List<EmprosEvent> events);
 }
