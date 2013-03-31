@@ -18,6 +18,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
 import org.codelibs.empros.agent.operation.EventOperation;
+import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,18 +28,23 @@ public class EmprosRestApiOperation implements EventOperation {
     private Logger logger = LoggerFactory
             .getLogger(EmprosRestApiOperation.class);
 
-    // TODO 外出しする
-    private String url = "http://localhost:8080/empros/events/";
+    private String url = "";
 
     private int eventCapacity = 1000;
 
     private int requestInterval = 100;
+
+    public EmprosRestApiOperation() {
+        super();
+        url = PropertiesUtil.loadProperties("emprosapi.properties", "empros.url");
+    }
 
     @Override
     public void excute(List<EmprosEvent> events) {
         HttpClient httpClient = null;
         try {
             int start = 0;
+            int retryCnt = 0;
             while (true) {
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException();
@@ -67,18 +73,30 @@ public class EmprosRestApiOperation implements EventOperation {
                             + EntityUtils.toString(httpPost.getEntity()));
                 }
 
-                HttpResponse response = httpClient.execute(httpPost);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("response: " + response.toString());
-                }
+                HttpResponse response = null;
+                int status = -1;
+                try {
+                    response = httpClient.execute(httpPost);
+                    status = response.getStatusLine().getStatusCode();
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("response: " + response.toString());
+                    }
+                }catch(IOException e) {
 
-                int status = response.getStatusLine().getStatusCode();
-                if(status != HttpStatus.SC_OK) {
-                    logger.warn("HTTPRequest error. status code:" + status);
                 }
 
                 httpClient.getConnectionManager().shutdown();
                 httpClient = null;
+
+                if(status != HttpStatus.SC_OK) {
+                    logger.warn("HTTPRequest error. status code:" + status + " retry:" + retryCnt + " url:" + url);
+                    if(retryCnt < 5) {
+                        retryCnt++;
+                        Thread.sleep(requestInterval);
+                        continue;
+                    }
+                }
+                retryCnt = 0;
 
                 if (end < events.size()) {
                     start = end;
