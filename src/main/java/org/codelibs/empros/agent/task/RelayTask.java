@@ -21,7 +21,7 @@ public class RelayTask extends TimerTask {
 
     private ExecutorService pool;
 
-    private int maxPoolSize = 10;
+    private int maxPoolSize = 1;
 
     public RelayTask(EventManager manager, EventOperation operation) {
         this.manager = manager;
