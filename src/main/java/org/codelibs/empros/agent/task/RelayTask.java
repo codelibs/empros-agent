@@ -2,9 +2,13 @@ package org.codelibs.empros.agent.task;
 
 import java.util.List;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.codelibs.empros.agent.event.EmprosEvent;
 import org.codelibs.empros.agent.event.EventManager;
+import org.codelibs.empros.agent.operation.EventOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,11 +17,16 @@ public class RelayTask extends TimerTask {
 
     private EventManager manager;
 
-    private ExcuteEventTask excuteEventTask;
+    private EventOperation operation;
 
-    public RelayTask(EventManager manager, ExcuteEventTask excuteEventTask) {
+    private ExecutorService pool;
+
+    private int maxPoolSize = 10;
+
+    public RelayTask(EventManager manager, EventOperation operation) {
         this.manager = manager;
-        this.excuteEventTask = excuteEventTask;
+        this.operation = operation;
+        this.pool = Executors.newFixedThreadPool(maxPoolSize);
     }
 
     @Override
@@ -29,8 +38,28 @@ public class RelayTask extends TimerTask {
             }
 
             if (events.size() > 0) {
+                ExcuteEventTask excuteEventTask = new ExcuteEventTask(operation);
                 excuteEventTask.setEvents(events);
+                pool.execute(excuteEventTask);
             }
         }
+    }
+
+    @Override
+    public boolean cancel() {
+        boolean ret = super.cancel();
+        try {
+            pool.shutdown();
+            if (!pool.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
+                logger.info("Cancel RelayTask 1");
+                pool.shutdownNow();
+            } else {
+                logger.info("Cancel RelayTask 2");
+            }
+        } catch (InterruptedException e) {
+            pool.shutdownNow();
+            logger.info("Cancel RelayTask 3");
+        }
+        return ret;
     }
 }

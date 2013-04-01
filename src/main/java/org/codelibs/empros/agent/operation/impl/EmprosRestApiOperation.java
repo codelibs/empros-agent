@@ -82,7 +82,7 @@ public class EmprosRestApiOperation implements EventOperation {
                         logger.debug("response: " + response.toString());
                     }
                 }catch(IOException e) {
-
+                    logger.warn(e.getLocalizedMessage());
                 }
 
                 httpClient.getConnectionManager().shutdown();

@@ -4,7 +4,6 @@ import java.util.Timer;
 
 import org.codelibs.empros.agent.event.EventManager;
 import org.codelibs.empros.agent.operation.EventOperation;
-import org.codelibs.empros.agent.task.ExcuteEventTask;
 import org.codelibs.empros.agent.task.RelayTask;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.slf4j.Logger;
@@ -18,8 +17,6 @@ public class EmprosAgent {
     private RelayTask task;
 
     private Timer timer;
-
-    private ExcuteEventTask excuteEventTask;
 
     private EventManager manager = new EventManager();
 
@@ -40,10 +37,7 @@ public class EmprosAgent {
 
         poolInterval = Long.parseLong(PropertiesUtil.loadProperties("agent.properties", "poolInterval"));
 
-        excuteEventTask = new ExcuteEventTask(operation);
-        excuteEventTask.start();
-
-        task = new RelayTask(manager, excuteEventTask);
+        task = new RelayTask(manager, operation);
         timer = new Timer();
         timer.schedule(task, poolInterval, poolInterval);
 
@@ -57,18 +51,9 @@ public class EmprosAgent {
 
         task.cancel();
         timer.cancel();
-        excuteEventTask.interrupt();
-
-        // waiting for the stop of threads.
-        try {
-            excuteEventTask.join();
-        } catch (InterruptedException e) {
-
-        }
 
         task = null;
         timer = null;
-        excuteEventTask = null;
         isStarted = false;
     }
 
