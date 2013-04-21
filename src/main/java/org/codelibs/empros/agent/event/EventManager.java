@@ -17,6 +17,7 @@ package org.codelibs.empros.agent.event;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -40,11 +41,13 @@ public class EventManager {
 
     protected final int maxPoolSize;
 
-    Queue<Event> eventQueue = new ConcurrentLinkedQueue<Event>();
+    protected Queue<Event> eventQueue = new ConcurrentLinkedQueue<>();
 
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    protected List<EventFilter> eventFilterList = new ArrayList<>();
 
-    private MonitoringThread monitoringThread;
+    protected final AtomicBoolean running = new AtomicBoolean(false);
+
+    protected MonitoringThread monitoringThread;
 
     public EventManager(final int eventSizeInRequest, final int requestPoolSize) {
         this.eventSizeInRequest = eventSizeInRequest;
@@ -85,6 +88,21 @@ public class EventManager {
         synchronized (this) {
             notify();
         }
+    }
+
+    public void addEventFilter(final EventFilter eventFilter) {
+        eventFilterList.add(eventFilter);
+    }
+
+    protected Event convert(final Event event) {
+        Event target = event;
+        for (final EventFilter eventFilter : eventFilterList) {
+            if (target == null) {
+                return null;
+            }
+            target = eventFilter.convert(target);
+        }
+        return target;
     }
 
     protected class MonitoringThread extends Thread {

@@ -18,10 +18,13 @@ package org.codelibs.empros.agent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.codelibs.empros.agent.event.EventFilter;
 import org.codelibs.empros.agent.event.EventManager;
 import org.codelibs.empros.agent.operation.Operation;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.codelibs.empros.agent.watcher.Watcher;
+import org.seasar.util.lang.ClassUtil;
+import org.seasar.util.lang.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +49,15 @@ public class EmprosAgent {
                 AGENT_PROPERTIES, "eventSizeInRequest", 100),
                 PropertiesUtil
                         .getAsInt(AGENT_PROPERTIES, "requestPoolSize", 10));
+        final String[] eventFilters = PropertiesUtil.getAsString(
+                AGENT_PROPERTIES, "eventFilters", StringUtil.EMPTY).split(",");
+        for (final String eventFilterClass : eventFilters) {
+            if (StringUtil.isNotBlank(eventFilterClass)) {
+                final EventFilter eventFilter = ClassUtil
+                        .newInstance(eventFilterClass);
+                eventManager.addEventFilter(eventFilter);
+            }
+        }
     }
 
     public boolean start() {
