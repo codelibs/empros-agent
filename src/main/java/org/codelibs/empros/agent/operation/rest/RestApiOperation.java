@@ -15,8 +15,10 @@
  */
 package org.codelibs.empros.agent.operation.rest;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +28,9 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
@@ -54,6 +58,8 @@ public class RestApiOperation implements Operation {
             .getLogger(RestApiOperation.class);
 
     private static final String EMPROSAPI_PROPERTIES = "emprosapi.properties";
+
+    private static final String EVENT_BACKUPFILE = "empros-eventbackup";
 
     private final String url;
 
@@ -115,20 +121,31 @@ public class RestApiOperation implements Operation {
 
     @Override
     public void excute(final List<Event> eventList) {
+        File backupFile = new File(EVENT_BACKUPFILE);
+        List<Event> events;
+        if(backupFile.exists()) {
+            events = restoreBackupEvent(eventList, backupFile);
+            if(events == null) {
+                return;
+            }
+        } else {
+            events = eventList;
+        }
+
         int start = 0;
         int retryCount = 0;
         while (true) {
             int end;
-            if (start + eventCapacity < eventList.size()) {
+            if (start + eventCapacity < events.size()) {
                 end = start + eventCapacity;
             } else {
-                end = eventList.size();
+                end = events.size();
             }
 
             HttpPost httpPost = null;
             HttpEntity httpEntity = null;
             try {
-                httpPost = getHttpPost(eventList.subList(start, end));
+                httpPost = getHttpPost(events.subList(start, end));
 
                 final HttpResponse response = httpClient.execute(httpPost);
                 httpEntity = response.getEntity();
@@ -138,7 +155,7 @@ public class RestApiOperation implements Operation {
                 }
 
                 if (status == HttpStatus.SC_OK) {
-                    if (end < eventList.size()) {
+                    if (end < events.size()) {
                         start = end;
                         retryCount = 0;
                     } else {
@@ -164,6 +181,7 @@ public class RestApiOperation implements Operation {
                 if (retryCount < maxRetryCount) {
                     retryCount++;
                 } else {
+                    exportBackupFile(events, backupFile);
                     // finished by an error
                     break;
                 }
@@ -250,6 +268,50 @@ public class RestApiOperation implements Operation {
         jsonBuf.append(']');
 
         return jsonBuf.toString();
+    }
+
+    private List<Event> restoreBackupEvent(List<Event> currentEventList, File backupFile) {
+        if(!backupFile.exists()) {
+            return new ArrayList<Event>(currentEventList);
+        }
+
+        List<Event> restoredEventList = null;
+        int status = getServerStatus();
+        if(status == HttpStatus.SC_OK) {
+            restoredEventList = importBackupFile(backupFile);
+            backupFile.delete();
+            restoredEventList.addAll(currentEventList);
+        } else {
+            exportBackupFile(currentEventList, backupFile);
+        }
+
+        return restoredEventList;
+    }
+
+    private void exportBackupFile(List<Event> eventList, File file) {
+        //TODO
+        return;
+    }
+
+    private List<Event> importBackupFile(File file) {
+        //TODO
+        return null;
+    }
+
+    private int getServerStatus() {
+        int status;
+        try {
+            //TODO リクエストヘッダ設定必要？
+            HttpHead httpHead = new HttpHead(url);
+            HttpResponse response = httpClient.execute(httpHead);
+            status = response.getStatusLine().getStatusCode();
+            EntityUtils.consumeQuietly(response.getEntity());
+        } catch (ClientProtocolException e) {
+            status = -1;
+        } catch (IOException e) {
+            status = -1;
+        }
+        return status;
     }
 
     public static class ConnectionMonitor extends Thread {
