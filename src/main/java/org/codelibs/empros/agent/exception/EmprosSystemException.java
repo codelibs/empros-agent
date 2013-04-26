@@ -19,16 +19,15 @@ import org.seasar.util.exception.SRuntimeException;
 
 /**
  * EmprosSystemException is a system exception class on Empros Agent.
- * 
- * @author shinsuke
  *
+ * @author shinsuke
  */
 public class EmprosSystemException extends SRuntimeException {
 
     private static final long serialVersionUID = 1L;
 
     public EmprosSystemException(final String messageCode, final Object[] args,
-            final Throwable cause) {
+                                 final Throwable cause) {
         super(messageCode, args, cause);
     }
 
@@ -37,7 +36,7 @@ public class EmprosSystemException extends SRuntimeException {
     }
 
     public EmprosSystemException(final String messageCode, final Throwable cause) {
-        super(messageCode, new Object[] {}, cause);
+        super(messageCode, new Object[]{}, cause);
     }
 
     public EmprosSystemException(final String messageCode) {

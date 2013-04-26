@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.codelibs.empros.agent.listener.OperationListener;
 import org.codelibs.empros.agent.operation.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,7 @@ public class EventManager {
         this.eventSizeInRequest = eventSizeInRequest;
         maxPoolSize = requestPoolSize;
         this.backupAndRestore = backupAndRestore;
-        if(backupDirectory.endsWith("/")) {
+        if (backupDirectory.endsWith("/")) {
             this.backupDirectory = backupDirectory;
         } else {
             this.backupDirectory = backupDirectory + "/";
@@ -82,7 +83,7 @@ public class EventManager {
 
     public void setOperation(final Operation operation) {
         this.operation = operation;
-        if(backupAndRestore) {
+        if (backupAndRestore) {
             this.operation.addOperationListener(new EventBackupListener());
         }
     }
@@ -153,17 +154,8 @@ public class EventManager {
         }
     }
 
-    public interface OperationListener {
-        public void successHandler(List<Event> eventList);
-
-        public void errorHandler(List<Event> eventList);
-
-        public void restoredHandler();
-    }
-
-    public class EventBackupListener implements OperationListener {
+    private class EventBackupListener implements OperationListener {
         private String filePrefix = "evbk-";
-        //TODO path setting
 
         @Override
         public void successHandler(List<Event> eventList) {
@@ -221,7 +213,7 @@ public class EventManager {
             }
         }
 
-        public void restoreEvents() {
+        private void restoreEvents() {
             File dir = new File(backupDirectory);
             if (!dir.isDirectory()) {
                 logger.warn(dir.getAbsolutePath() + " is not a directory.");
@@ -229,11 +221,11 @@ public class EventManager {
             }
             List<Event> restoreEventList = new ArrayList<Event>();
 
-            if(!exsitsBackupEvent(dir)) {
+            if (!exsitsBackupEvent(dir)) {
                 return;
             }
             synchronized (this) {
-                if(!exsitsBackupEvent(dir)) {
+                if (!exsitsBackupEvent(dir)) {
                     return;
                 }
 
@@ -302,7 +294,7 @@ public class EventManager {
         }
 
         private boolean exsitsBackupEvent(File dir) {
-            if(!dir.isDirectory()) {
+            if (!dir.isDirectory()) {
                 return false;
             }
             File[] files = dir.listFiles();
@@ -320,6 +312,4 @@ public class EventManager {
             return ret;
         }
     }
-
-
 }

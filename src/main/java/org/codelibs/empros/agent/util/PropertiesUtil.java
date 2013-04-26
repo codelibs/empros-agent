@@ -33,7 +33,7 @@ public class PropertiesUtil {
     private static final Map<String, PropData> propDataMap = new ConcurrentHashMap<String, PropData>();
 
     public static String getAsString(final String path, final String key,
-            final String defaultValue) {
+                                     final String defaultValue) {
         final Properties props = getProperties(path);
         final String value = props.getProperty(key);
         if (value != null) {
@@ -43,7 +43,7 @@ public class PropertiesUtil {
     }
 
     public static long getAsLong(final String path, final String key,
-            final long defaultValue) {
+                                 final long defaultValue) {
         final Properties props = getProperties(path);
         final String value = props.getProperty(key);
         if (value != null) {
@@ -53,7 +53,7 @@ public class PropertiesUtil {
     }
 
     public static int getAsInt(final String path, final String key,
-            final int defaultValue) {
+                               final int defaultValue) {
         final Properties props = getProperties(path);
         final String value = props.getProperty(key);
         if (value != null) {

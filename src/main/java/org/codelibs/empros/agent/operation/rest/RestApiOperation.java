@@ -44,8 +44,8 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.codelibs.empros.agent.event.Event;
 import org.codelibs.empros.agent.exception.EmprosSystemException;
+import org.codelibs.empros.agent.listener.OperationListener;
 import org.codelibs.empros.agent.operation.Operation;
-import org.codelibs.empros.agent.event.EventManager.OperationListener;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.seasar.util.io.CloseableUtil;
 import org.seasar.util.io.InputStreamUtil;
@@ -315,8 +315,8 @@ public class RestApiOperation implements Operation {
     }
 
     private void callbackResoted() {
-        if(listenerList.size() > 0) {
-            for(OperationListener listener: listenerList) {
+        if (listenerList.size() > 0) {
+            for (OperationListener listener : listenerList) {
                 listener.restoredHandler();
             }
         }
@@ -382,7 +382,7 @@ public class RestApiOperation implements Operation {
                     }
                 }
             } else if (after != before) {
-                if(logger.isInfoEnabled()) {
+                if (logger.isInfoEnabled()) {
                     logger.info("Api Monitoring. Server was restored. " + url);
                 }
                 callbackResoted();

@@ -61,7 +61,7 @@ public class FileWatchTask extends Thread {
     private final WatchEvent.Modifier[] modifiers;
 
     public FileWatchTask(final EventManager manager, final Path watchPath,
-            final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers) {
+                         final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers) {
         super();
         setPriority(Thread.MAX_PRIORITY);
 

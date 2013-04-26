@@ -75,21 +75,21 @@ public class FileWatcher implements Watcher {
             for (final String kind : kinds) {
                 if (StringUtils.isNotBlank(kind)) {
                     switch (kind.trim()) {
-                    case "create":
-                        kindList.add(StandardWatchEventKinds.ENTRY_CREATE);
-                        break;
-                    case "modify":
-                        kindList.add(StandardWatchEventKinds.ENTRY_MODIFY);
-                        break;
-                    case "delete":
-                        kindList.add(StandardWatchEventKinds.ENTRY_DELETE);
-                        break;
-                    case "overflow":
-                        kindList.add(StandardWatchEventKinds.OVERFLOW);
-                        break;
-                    default:
-                        logger.warn("unknown kind: {}", kind);
-                        break;
+                        case "create":
+                            kindList.add(StandardWatchEventKinds.ENTRY_CREATE);
+                            break;
+                        case "modify":
+                            kindList.add(StandardWatchEventKinds.ENTRY_MODIFY);
+                            break;
+                        case "delete":
+                            kindList.add(StandardWatchEventKinds.ENTRY_DELETE);
+                            break;
+                        case "overflow":
+                            kindList.add(StandardWatchEventKinds.OVERFLOW);
+                            break;
+                        default:
+                            logger.warn("unknown kind: {}", kind);
+                            break;
                     }
                 }
             }
@@ -102,21 +102,21 @@ public class FileWatcher implements Watcher {
             for (final String modifier : modifiers) {
                 if (StringUtils.isNotBlank(modifier)) {
                     switch (modifier.trim()) {
-                    case "fileTree":
-                        modifierList
-                                .add(com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE);
-                        break;
-                    default:
-                        logger.warn("unknown modifier: {}", modifier);
-                        break;
+                        case "fileTree":
+                            modifierList
+                                    .add(com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE);
+                            break;
+                        default:
+                            logger.warn("unknown modifier: {}", modifier);
+                            break;
                     }
                 }
             }
 
             fileWatcherList.add(new FileWatchTask(eventManager, file.toPath(),
                     kindList.toArray(new Kind[kindList.size()]), modifierList
-                            .toArray(new WatchEvent.Modifier[modifierList
-                                    .size()])));
+                    .toArray(new WatchEvent.Modifier[modifierList
+                            .size()])));
 
         }
 

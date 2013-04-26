@@ -13,17 +13,17 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.codelibs.empros.agent.operation;
+package org.codelibs.empros.agent.listener;
+
+
+import org.codelibs.empros.agent.event.Event;
 
 import java.util.List;
 
-import org.codelibs.empros.agent.event.Event;
-import org.codelibs.empros.agent.listener.OperationListener;
+public interface OperationListener {
+    public void successHandler(List<Event> eventList);
 
-public interface Operation {
-    void addOperationListener(OperationListener listener);
+    public void errorHandler(List<Event> eventList);
 
-    void excute(List<Event> events);
-
-    void destroy();
+    public void restoredHandler();
 }
