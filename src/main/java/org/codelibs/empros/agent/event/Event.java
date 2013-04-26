@@ -15,9 +15,10 @@
  */
 package org.codelibs.empros.agent.event;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
-public class Event extends HashMap<String, Object> {
+public class Event extends HashMap<String, Object> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

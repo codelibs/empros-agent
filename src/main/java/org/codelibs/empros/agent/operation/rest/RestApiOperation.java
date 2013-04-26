@@ -15,24 +15,22 @@
  */
 package org.codelibs.empros.agent.operation.rest;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
@@ -41,10 +39,13 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.codelibs.empros.agent.event.Event;
 import org.codelibs.empros.agent.exception.EmprosSystemException;
 import org.codelibs.empros.agent.operation.Operation;
+import org.codelibs.empros.agent.event.EventManager.OperationListener;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.seasar.util.io.CloseableUtil;
 import org.seasar.util.io.InputStreamUtil;
@@ -59,8 +60,6 @@ public class RestApiOperation implements Operation {
 
     private static final String EMPROSAPI_PROPERTIES = "emprosapi.properties";
 
-    private static final String EVENT_BACKUPFILE = "empros-eventbackup";
-
     private final String url;
 
     private final int eventCapacity;
@@ -72,6 +71,16 @@ public class RestApiOperation implements Operation {
     private final HttpClient httpClient;
 
     private final ConnectionMonitor connectionMonitor;
+
+    private final List<OperationListener> listenerList = new ArrayList<OperationListener>();
+
+    private final ApiMonitor apiMonitor;
+
+    private final Timer apiMonitorTimer;
+
+    private final long apiMonitorInterval;
+
+    private final AtomicBoolean apiAvailable = new AtomicBoolean(false);
 
     public RestApiOperation() {
         url = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "emprosUrl",
@@ -87,6 +96,8 @@ public class RestApiOperation implements Operation {
                 "requestInterval", 100);
         maxRetryCount = PropertiesUtil.getAsInt(EMPROSAPI_PROPERTIES,
                 "maxRetryCount", 5);
+        apiMonitorInterval = PropertiesUtil.getAsLong(EMPROSAPI_PROPERTIES,
+                "apiMonitorInterval", 1 * 60 * 1000);
 
         final long connectionCheckInterval = PropertiesUtil.getAsLong(
                 EMPROSAPI_PROPERTIES, "connectionCheckInterval", 5000);
@@ -102,50 +113,61 @@ public class RestApiOperation implements Operation {
                 schemeRegistry, 5, TimeUnit.MINUTES);
 
         httpClient = new DefaultHttpClient(clientConnectionManager);
+        HttpParams httpParams = httpClient.getParams();
 
         // TODO auth
         // TODO connection timeout
+        HttpConnectionParams.setConnectionTimeout(httpParams, 5 * 1000);
         // TODO socket timeout
+        HttpConnectionParams.setSoTimeout(httpParams, 5 * 1000);
 
         connectionMonitor = new ConnectionMonitor(clientConnectionManager,
                 connectionCheckInterval, idleConnectionTimeout);
         connectionMonitor.setDaemon(true);
         connectionMonitor.start();
+
+        String host = url.substring(url.indexOf("://") + "://".length());
+        host = host.substring(0, host.indexOf("/"));
+        host = host.substring(0, host.indexOf(":"));
+        apiMonitor = new ApiMonitor();
+        apiMonitorTimer = new Timer();
+        apiMonitorTimer.schedule(apiMonitor, 0, apiMonitorInterval);
     }
 
     @Override
     public void destroy() {
         connectionMonitor.shutdown();
+        apiMonitorTimer.cancel();
         httpClient.getConnectionManager().shutdown();
     }
 
     @Override
+    public void addOperationListener(OperationListener listener) {
+        listenerList.add(listener);
+    }
+
+    @Override
     public void excute(final List<Event> eventList) {
-        File backupFile = new File(EVENT_BACKUPFILE);
-        List<Event> events;
-        if(backupFile.exists()) {
-            events = restoreBackupEvent(eventList, backupFile);
-            if(events == null) {
-                return;
-            }
-        } else {
-            events = eventList;
+        if (!apiAvailable.get()) {
+            callbackResultError(eventList);
+            return;
         }
 
+        boolean isSuccess = false;
         int start = 0;
         int retryCount = 0;
         while (true) {
             int end;
-            if (start + eventCapacity < events.size()) {
+            if (start + eventCapacity < eventList.size()) {
                 end = start + eventCapacity;
             } else {
-                end = events.size();
+                end = eventList.size();
             }
 
             HttpPost httpPost = null;
             HttpEntity httpEntity = null;
             try {
-                httpPost = getHttpPost(events.subList(start, end));
+                httpPost = getHttpPost(eventList.subList(start, end));
 
                 final HttpResponse response = httpClient.execute(httpPost);
                 httpEntity = response.getEntity();
@@ -155,11 +177,12 @@ public class RestApiOperation implements Operation {
                 }
 
                 if (status == HttpStatus.SC_OK) {
-                    if (end < events.size()) {
+                    if (end < eventList.size()) {
                         start = end;
                         retryCount = 0;
                     } else {
                         // finished
+                        isSuccess = true;
                         break;
                     }
                 } else {
@@ -181,7 +204,6 @@ public class RestApiOperation implements Operation {
                 if (retryCount < maxRetryCount) {
                     retryCount++;
                 } else {
-                    exportBackupFile(events, backupFile);
                     // finished by an error
                     break;
                 }
@@ -193,7 +215,13 @@ public class RestApiOperation implements Operation {
             }
 
             sleep();
+        }
 
+        if (isSuccess) {
+            callbackResultSuccess(eventList);
+        } else {
+            apiAvailable.set(false);
+            callbackResultError(eventList);
         }
     }
 
@@ -221,8 +249,8 @@ public class RestApiOperation implements Operation {
     protected HttpPost getHttpPost(final List<Event> eventList)
             throws IOException {
         final HttpPost httpPost = new HttpPost(url);
-        final Header[] headers = { new BasicHeader("Content-type",
-                "application/json") };
+        final Header[] headers = {new BasicHeader("Content-type",
+                "application/json")};
         httpPost.setHeaders(headers);
 
         final String json = generateJson(eventList);
@@ -270,48 +298,28 @@ public class RestApiOperation implements Operation {
         return jsonBuf.toString();
     }
 
-    private List<Event> restoreBackupEvent(List<Event> currentEventList, File backupFile) {
-        if(!backupFile.exists()) {
-            return new ArrayList<Event>(currentEventList);
+    private void callbackResultSuccess(List<Event> eventList) {
+        if (listenerList.size() > 0) {
+            for (OperationListener listener : listenerList) {
+                listener.successHandler(eventList);
+            }
         }
-
-        List<Event> restoredEventList = null;
-        int status = getServerStatus();
-        if(status == HttpStatus.SC_OK) {
-            restoredEventList = importBackupFile(backupFile);
-            backupFile.delete();
-            restoredEventList.addAll(currentEventList);
-        } else {
-            exportBackupFile(currentEventList, backupFile);
-        }
-
-        return restoredEventList;
     }
 
-    private void exportBackupFile(List<Event> eventList, File file) {
-        //TODO
-        return;
-    }
-
-    private List<Event> importBackupFile(File file) {
-        //TODO
-        return null;
-    }
-
-    private int getServerStatus() {
-        int status;
-        try {
-            //TODO リクエストヘッダ設定必要？
-            HttpHead httpHead = new HttpHead(url);
-            HttpResponse response = httpClient.execute(httpHead);
-            status = response.getStatusLine().getStatusCode();
-            EntityUtils.consumeQuietly(response.getEntity());
-        } catch (ClientProtocolException e) {
-            status = -1;
-        } catch (IOException e) {
-            status = -1;
+    private void callbackResultError(List<Event> eventList) {
+        if (listenerList.size() > 0) {
+            for (OperationListener listener : listenerList) {
+                listener.errorHandler(eventList);
+            }
         }
-        return status;
+    }
+
+    private void callbackResoted() {
+        if(listenerList.size() > 0) {
+            for(OperationListener listener: listenerList) {
+                listener.restoredHandler();
+            }
+        }
     }
 
     public static class ConnectionMonitor extends Thread {
@@ -359,6 +367,43 @@ public class RestApiOperation implements Operation {
                 notifyAll();
             }
         }
+    }
 
+    protected class ApiMonitor extends TimerTask {
+        @Override
+        public void run() {
+            boolean before = apiAvailable.get();
+            boolean after = isReachable();
+            apiAvailable.set(after);
+            if (!after) {
+                if (after != before) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Api Monitoring. Server is not available. " + url);
+                    }
+                }
+            } else if (after != before) {
+                if(logger.isInfoEnabled()) {
+                    logger.info("Api Monitoring. Server was restored. " + url);
+                }
+                callbackResoted();
+            }
+
+        }
+
+        private boolean isReachable() {
+            boolean reached;
+            try {
+                HttpHead request = new HttpHead(url);
+                HttpResponse response = httpClient.execute(request);
+                reached = true;
+                EntityUtils.consumeQuietly(response.getEntity());
+            } catch (ConnectTimeoutException e) {
+                reached = false;
+            } catch (Exception e) {
+                logger.warn("Failed to monitor api. " + url, e);
+                reached = false;
+            }
+            return reached;
+        }
     }
 }

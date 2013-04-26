@@ -48,7 +48,10 @@ public class EmprosAgent {
         eventManager = new EventManager(PropertiesUtil.getAsInt(
                 AGENT_PROPERTIES, "eventSizeInRequest", 100),
                 PropertiesUtil
-                        .getAsInt(AGENT_PROPERTIES, "requestPoolSize", 10));
+                        .getAsInt(AGENT_PROPERTIES, "requestPoolSize", 10),
+                Boolean.parseBoolean(PropertiesUtil
+                        .getAsString(AGENT_PROPERTIES, "backupAndRestore", "false")),
+                PropertiesUtil.getAsString(AGENT_PROPERTIES, "backupDirectory", ""));
         final String[] eventFilters = PropertiesUtil.getAsString(
                 AGENT_PROPERTIES, "eventFilters", StringUtil.EMPTY).split(",");
         for (final String eventFilterClass : eventFilters) {

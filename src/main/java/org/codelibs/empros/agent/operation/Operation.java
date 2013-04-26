@@ -18,8 +18,11 @@ package org.codelibs.empros.agent.operation;
 import java.util.List;
 
 import org.codelibs.empros.agent.event.Event;
+import org.codelibs.empros.agent.event.EventManager;
 
 public interface Operation {
+    void addOperationListener(EventManager.OperationListener listener);
+
     void excute(List<Event> events);
 
     void destroy();

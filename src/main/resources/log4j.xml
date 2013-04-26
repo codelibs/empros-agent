@@ -24,6 +24,10 @@
 	<logger name="org.codelibs.empros.agent.task" >
 		<level value="debug" />
 	</logger>
+    <logger name="org.codelibs.empros.agent.event" >
+        <level value="debug" />
+    </logger>
+
 
 	<root>
 		<priority value="info" />

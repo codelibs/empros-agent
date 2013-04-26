@@ -1,5 +1,7 @@
+.DS_Store
 target
 .classpath
 .project
+.idea
 logs
-empros-agent.iml
+*.iml

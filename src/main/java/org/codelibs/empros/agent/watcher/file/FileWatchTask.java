@@ -16,6 +16,7 @@
 package org.codelibs.empros.agent.watcher.file;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -23,6 +24,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Date;
 
 import org.codelibs.empros.agent.event.Event;
 import org.codelibs.empros.agent.event.Event.EventComparator;
@@ -46,28 +48,9 @@ public class FileWatchTask extends Thread {
 
     private static final String KIND = "kind";
 
-    private static final EventComparator EVENT_COMPARATOR = new EventComparator() {
+    private static final String TIMESTAMP = "timestamp";
 
-        @Override
-        public int hashCode(final Event self) {
-            final Object path = self.get(FILE);
-            if (path != null) {
-                return path.hashCode();
-            }
-            logger.warn("A value of {} is not found.", FILE);
-            return self.hashCode(false);
-        }
-
-        @Override
-        public boolean equals(final Event self, final Object target) {
-            if (target instanceof Event) {
-                final Object selfPath = self.get(FILE);
-                return selfPath != null
-                        && selfPath.equals(((Event) target).get(FILE));
-            }
-            return false;
-        }
-    };
+    private static final EventComparator EVENT_COMPARATOR = new FileEventComerator();
 
     private final Path watchPath;
 
@@ -112,6 +95,7 @@ public class FileWatchTask extends Thread {
                 try {
                     final WatchKey retrieveKey = watcher.take();
 
+                    final long timestamp = (new Date()).getTime();
                     for (final WatchEvent<?> event : retrieveKey.pollEvents()) {
                         String kind;
                         if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
@@ -135,7 +119,7 @@ public class FileWatchTask extends Thread {
                                     + event.count() + " " + path);
                         }
 
-                        final Event fileEvent = createEvent(kind, path);
+                        final Event fileEvent = createEvent(kind, path, timestamp);
 
                         manager.addEvent(fileEvent);
                     }
@@ -161,12 +145,35 @@ public class FileWatchTask extends Thread {
         }
     }
 
-    protected Event createEvent(final String kind, final Path path) {
+    protected Event createEvent(final String kind, final Path path, final long timestamp) {
         final Event fileEvent = new Event();
         fileEvent.put(FILE, path.toString().replace("\\", "/"));
         fileEvent.put(KIND, kind);
+        fileEvent.put(TIMESTAMP, timestamp);
         fileEvent.setEventComparator(EVENT_COMPARATOR);
         return fileEvent;
+    }
+
+    public static class FileEventComerator implements EventComparator, Serializable {
+        @Override
+        public int hashCode(final Event self) {
+            final Object path = self.get(FILE);
+            if (path != null) {
+                return path.hashCode();
+            }
+            logger.warn("A value of {} is not found.", FILE);
+            return self.hashCode(false);
+        }
+
+        @Override
+        public boolean equals(final Event self, final Object target) {
+            if (target instanceof Event) {
+                final Object selfPath = self.get(FILE);
+                return selfPath != null
+                        && selfPath.equals(((Event) target).get(FILE));
+            }
+            return false;
+        }
     }
 
 }

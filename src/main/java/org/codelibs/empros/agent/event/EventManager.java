@@ -15,11 +15,8 @@
  */
 package org.codelibs.empros.agent.event;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,9 +46,20 @@ public class EventManager {
 
     protected MonitoringThread monitoringThread;
 
-    public EventManager(final int eventSizeInRequest, final int requestPoolSize) {
+    protected final boolean backupAndRestore;
+
+    protected final String backupDirectory;
+
+    public EventManager(final int eventSizeInRequest, final int requestPoolSize, final boolean backupAndRestore,
+                        final String backupDirectory) {
         this.eventSizeInRequest = eventSizeInRequest;
         maxPoolSize = requestPoolSize;
+        this.backupAndRestore = backupAndRestore;
+        if(backupDirectory.endsWith("/")) {
+            this.backupDirectory = backupDirectory;
+        } else {
+            this.backupDirectory = backupDirectory + "/";
+        }
     }
 
     public void start() {
@@ -74,6 +82,9 @@ public class EventManager {
 
     public void setOperation(final Operation operation) {
         this.operation = operation;
+        if(backupAndRestore) {
+            this.operation.addOperationListener(new EventBackupListener());
+        }
     }
 
     public void addEvent(final Event event) {
@@ -140,7 +151,175 @@ public class EventManager {
                 }
             }
         }
-
     }
+
+    public interface OperationListener {
+        public void successHandler(List<Event> eventList);
+
+        public void errorHandler(List<Event> eventList);
+
+        public void restoredHandler();
+    }
+
+    public class EventBackupListener implements OperationListener {
+        private String filePrefix = "evbk-";
+        //TODO path setting
+
+        @Override
+        public void successHandler(List<Event> eventList) {
+            restoreEvents();
+        }
+
+        @Override
+        public void restoredHandler() {
+            restoreEvents();
+        }
+
+        @Override
+        public void errorHandler(List<Event> eventList) {
+            String fileName = backupDirectory
+                    + filePrefix + (new Date()).getTime() + "-" + Thread.currentThread().getName();
+            File file = new File(fileName);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Callded Error Handler.");
+                for (Event event : eventList) {
+                    StringBuilder logBuffer = new StringBuilder("Back up event-> ");
+                    for (Map.Entry<String, Object> entry : event.entrySet()) {
+                        logBuffer.append(entry.getKey());
+                        logBuffer.append(":");
+                        logBuffer.append(entry.getValue().toString());
+                        logBuffer.append(" ");
+                    }
+                    logger.debug(logBuffer.toString());
+                }
+                logger.debug("Event Backup to -> " + file.getAbsolutePath());
+            }
+
+            FileOutputStream outFile = null;
+            ObjectOutputStream outObject = null;
+            try {
+                outFile = new FileOutputStream(file);
+                outObject = new ObjectOutputStream(outFile);
+                outObject.writeObject(eventList);
+            } catch (Exception e) {
+                logger.warn("Failed to export backup event.", e);
+            } finally {
+                if (outObject != null) {
+                    try {
+                        outObject.close();
+                    } catch (Exception e) {
+
+                    }
+                }
+                if (outFile != null) {
+                    try {
+                        outFile.close();
+                    } catch (Exception e) {
+
+                    }
+                }
+            }
+        }
+
+        public void restoreEvents() {
+            File dir = new File(backupDirectory);
+            if (!dir.isDirectory()) {
+                logger.warn(dir.getAbsolutePath() + " is not a directory.");
+                return;
+            }
+            List<Event> restoreEventList = new ArrayList<Event>();
+
+            if(!exsitsBackupEvent(dir)) {
+                return;
+            }
+            synchronized (this) {
+                if(!exsitsBackupEvent(dir)) {
+                    return;
+                }
+
+                File[] files = dir.listFiles();
+                List<File> bkFileList = new ArrayList<File>();
+                for (File file : files) {
+                    if (file.getName().startsWith(filePrefix)) {
+                        bkFileList.add(file);
+                    }
+                }
+
+                for (File file : bkFileList) {
+                    FileInputStream inFile = null;
+                    ObjectInputStream inObject = null;
+                    try {
+                        inFile = new FileInputStream(file);
+                        inObject = new ObjectInputStream(inFile);
+                        List<Event> events = (List<Event>) inObject.readObject();
+                        restoreEventList.addAll(events);
+                    } catch (Exception e) {
+                        logger.warn("Failed to restore event.", e);
+                    } finally {
+                        if (inObject != null) {
+                            try {
+                                inObject.close();
+                            } catch (Exception e) {
+
+                            }
+                        }
+                        if (inFile != null) {
+                            try {
+                                inFile.close();
+                            } catch (Exception e) {
+
+                            }
+                        }
+                        file.delete();
+                    }
+                }
+            }
+            if (logger.isInfoEnabled()) {
+                logger.info("Restored Event Num: " + restoreEventList.size());
+            }
+
+            int eventCount = 0;
+            for (Event event : restoreEventList) {
+                if (logger.isDebugEnabled()) {
+                    StringBuilder logBuffer = new StringBuilder("Restored event-> ");
+                    for (Map.Entry<String, Object> entry : event.entrySet()) {
+                        logBuffer.append(entry.getKey());
+                        logBuffer.append(":");
+                        logBuffer.append(entry.getValue().toString());
+                        logBuffer.append(" ");
+                    }
+                    logger.debug(logBuffer.toString());
+                }
+
+                addEvent(event);
+                eventCount++;
+                if (eventCount >= 100) {
+                    submit();
+                    eventCount = 0;
+                }
+            }
+            submit();
+        }
+
+        private boolean exsitsBackupEvent(File dir) {
+            if(!dir.isDirectory()) {
+                return false;
+            }
+            File[] files = dir.listFiles();
+            if (files.length == 0) {
+                return false;
+            }
+
+            boolean ret = false;
+            for (File file : files) {
+                if (file.getName().startsWith(filePrefix)) {
+                    ret = true;
+                    break;
+                }
+            }
+            return ret;
+        }
+    }
+
 
 }
