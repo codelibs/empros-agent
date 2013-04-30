@@ -220,7 +220,6 @@ public class RestApiOperation implements Operation {
         if (isSuccess) {
             callbackResultSuccess(eventList);
         } else {
-            apiAvailable.set(false);
             callbackResultError(eventList);
         }
     }
@@ -287,7 +286,7 @@ public class RestApiOperation implements Operation {
                         .getKey()));
                 jsonBuf.append("\":\"");
                 jsonBuf.append(StringEscapeUtils.escapeJavaScript(entry
-                        .getValue().toString()));
+                        .getValue().toString().replace("\'", "")));
                 jsonBuf.append('\"');
             }
             jsonBuf.append('}');
