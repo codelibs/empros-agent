@@ -11,6 +11,8 @@ Necessary settings to use filewatcher.
     * backupDirectory
 * filewatcher.properties
     * watchPath1
+* emprosapi.properties
+    * emprosUrl
 
 ##Install to Windows Service
 Copy "target/empros-agent-1.0.0-SNAPSHOT-jar-with-dependencies.jar" to "package/empros-agent/bin/".  
