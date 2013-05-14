@@ -117,9 +117,9 @@ public class RestApiOperation implements Operation {
 
         // TODO auth
         // TODO connection timeout
-        HttpConnectionParams.setConnectionTimeout(httpParams, 5 * 1000);
+        HttpConnectionParams.setConnectionTimeout(httpParams, 20 * 1000);
         // TODO socket timeout
-        HttpConnectionParams.setSoTimeout(httpParams, 5 * 1000);
+        HttpConnectionParams.setSoTimeout(httpParams, 20 * 1000);
 
         connectionMonitor = new ConnectionMonitor(clientConnectionManager,
                 connectionCheckInterval, idleConnectionTimeout);
