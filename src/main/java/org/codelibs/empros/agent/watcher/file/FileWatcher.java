@@ -116,7 +116,7 @@ public class FileWatcher implements Watcher {
             fileWatcherList.add(new FileWatchTask(eventManager, file.toPath(),
                     kindList.toArray(new Kind[kindList.size()]), modifierList
                     .toArray(new WatchEvent.Modifier[modifierList
-                            .size()])));
+                            .size()]), new FileWatchFilter()));
 
         }
 

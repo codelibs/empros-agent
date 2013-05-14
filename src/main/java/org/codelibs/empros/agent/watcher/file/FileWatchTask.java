@@ -36,19 +36,19 @@ public class FileWatchTask extends Thread {
     private static final Logger logger = LoggerFactory
             .getLogger(FileWatchTask.class);
 
-    private static final String CREATE = "create";
+    public static final String CREATE = "create";
 
-    private static final String MODIFY = "modify";
+    public static final String MODIFY = "modify";
 
-    private static final String DELETE = "delete";
+    public static final String DELETE = "delete";
 
-    private static final String OVERFLOW = "overflow";
+    public static final String OVERFLOW = "overflow";
 
-    private static final String FILE = "filepath";
+    public static final String FILE = "filepath";
 
-    private static final String KIND = "kind";
+    public static final String KIND = "kind";
 
-    private static final String TIMESTAMP = "timestamp";
+    public static final String TIMESTAMP = "timestamp";
 
     private static final EventComparator EVENT_COMPARATOR = new FileEventComerator();
 
@@ -60,8 +60,11 @@ public class FileWatchTask extends Thread {
 
     private final WatchEvent.Modifier[] modifiers;
 
+    private final FileWatchFilter filter;
+
     public FileWatchTask(final EventManager manager, final Path watchPath,
-                         final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers) {
+                         final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers,
+                         final FileWatchFilter filter) {
         super();
         setPriority(Thread.MAX_PRIORITY);
 
@@ -69,6 +72,7 @@ public class FileWatchTask extends Thread {
         this.watchPath = watchPath;
         this.kinds = kinds;
         this.modifiers = modifiers;
+        this.filter = filter;
     }
 
     @Override
@@ -120,8 +124,9 @@ public class FileWatchTask extends Thread {
                         }
 
                         final Event fileEvent = createEvent(kind, path, timestamp);
-
-                        manager.addEvent(fileEvent);
+                        if(filter.filter(fileEvent)) {
+                            manager.addEvent(fileEvent);
+                        }
                     }
 
                     manager.submit();

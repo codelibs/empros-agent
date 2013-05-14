@@ -399,7 +399,7 @@ public class RestApiOperation implements Operation {
             } catch (ConnectTimeoutException e) {
                 reached = false;
             } catch (Exception e) {
-                logger.warn("Failed to monitor api. " + url, e);
+                logger.warn("Failed to monitor api. " + url);
                 reached = false;
             }
             return reached;

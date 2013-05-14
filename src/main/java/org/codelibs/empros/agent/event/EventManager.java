@@ -221,9 +221,6 @@ public class EventManager {
             }
             List<Event> restoreEventList = new ArrayList<Event>();
 
-            if (!exsitsBackupEvent(dir)) {
-                return;
-            }
             synchronized (this) {
                 if (!exsitsBackupEvent(dir)) {
                     return;
