@@ -116,19 +116,14 @@ public class RestApiOperation implements Operation {
         HttpParams httpParams = httpClient.getParams();
 
         // TODO auth
-        // TODO connection timeout
-        HttpConnectionParams.setConnectionTimeout(httpParams, 20 * 1000);
-        // TODO socket timeout
-        HttpConnectionParams.setSoTimeout(httpParams, 20 * 1000);
+        HttpConnectionParams.setConnectionTimeout(httpParams, 10 * 1000);
+        HttpConnectionParams.setSoTimeout(httpParams, 10 * 1000);
 
         connectionMonitor = new ConnectionMonitor(clientConnectionManager,
                 connectionCheckInterval, idleConnectionTimeout);
         connectionMonitor.setDaemon(true);
         connectionMonitor.start();
 
-        String host = url.substring(url.indexOf("://") + "://".length());
-        host = host.substring(0, host.indexOf("/"));
-        host = host.substring(0, host.indexOf(":"));
         apiMonitor = new ApiMonitor();
         apiMonitorTimer = new Timer();
         apiMonitorTimer.schedule(apiMonitor, 0, apiMonitorInterval);
