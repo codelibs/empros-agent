@@ -51,8 +51,10 @@ public class EventManager {
 
     protected final String backupDirectory;
 
+    protected final long operationInterval;
+
     public EventManager(final int eventSizeInRequest, final int requestPoolSize, final boolean backupAndRestore,
-                        final String backupDirectory) {
+                        final String backupDirectory, final long operationInterval) {
         this.eventSizeInRequest = eventSizeInRequest;
         maxPoolSize = requestPoolSize;
         this.backupAndRestore = backupAndRestore;
@@ -61,6 +63,7 @@ public class EventManager {
         } else {
             this.backupDirectory = backupDirectory + "/";
         }
+        this.operationInterval = operationInterval;
     }
 
     public void start() {
@@ -136,9 +139,10 @@ public class EventManager {
                         if (event == null) {
                             break;
                         }
-                        // TODO filter
-
-                        eventSet.add(event);
+                        Event convertedEvent = convert(event);
+                        if(convertedEvent != null) {
+                            eventSet.add(convertedEvent);
+                        }
                     }
 
                     if (!eventSet.isEmpty()) {
@@ -148,6 +152,13 @@ public class EventManager {
                                 operation.excute(new ArrayList<>(eventSet));
                             }
                         });
+
+                        if(operationInterval > 0) {
+                            try {
+                                sleep(operationInterval);
+                            } catch(InterruptedException e) {
+                            }
+                        }
                     }
                 }
             }

@@ -3,6 +3,7 @@ package org.codelibs.empros.agent.watcher.file;
 
 import org.apache.commons.lang.StringUtils;
 import org.codelibs.empros.agent.event.Event;
+import org.codelibs.empros.agent.event.EventFilter;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FileWatchFilter {
+public class FileEventFilter implements EventFilter{
     private final String FILEWATCHER_PROPERTIES = "filewatcher.properties";
 
     private final String EXCLUDE_KEY = "excludePath";
@@ -21,7 +22,7 @@ public class FileWatchFilter {
 
     private boolean excludeNoneFileExtension;
 
-    public FileWatchFilter() {
+    public FileEventFilter() {
         int count = 1;
         while (true) {
             String excludePath = PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, EXCLUDE_KEY + count, null);
@@ -35,18 +36,20 @@ public class FileWatchFilter {
         excludeNoneFileExtension = Boolean.parseBoolean(PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, EXCLUDE_NONE_FILEEXTENSION_KEY, "false"));
     }
 
-    public boolean filter(Event event) {
+    @Override
+    public Event convert(Event target) {
         boolean ret = true;
-
         if (excludeNoneFileExtension) {
-            ret = filterByExtension(event);
+            ret = filterByExtension(target);
         }
-
         if (ret && excludePathList.size() > 0) {
-            ret = filterByExcludePath(event);
+            ret = filterByExcludePath(target);
         }
 
-        return ret;
+        if(!ret) {
+            return null;
+        }
+        return target;
     }
 
     private boolean filterByExtension(Event event) {

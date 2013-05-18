@@ -60,11 +60,8 @@ public class FileWatchTask extends Thread {
 
     private final WatchEvent.Modifier[] modifiers;
 
-    private final FileWatchFilter filter;
-
     public FileWatchTask(final EventManager manager, final Path watchPath,
-                         final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers,
-                         final FileWatchFilter filter) {
+                         final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers) {
         super();
         setPriority(Thread.MAX_PRIORITY);
 
@@ -72,7 +69,6 @@ public class FileWatchTask extends Thread {
         this.watchPath = watchPath;
         this.kinds = kinds;
         this.modifiers = modifiers;
-        this.filter = filter;
     }
 
     @Override
@@ -124,9 +120,7 @@ public class FileWatchTask extends Thread {
                         }
 
                         final Event fileEvent = createEvent(kind, path, timestamp);
-                        if(filter.filter(fileEvent)) {
-                            manager.addEvent(fileEvent);
-                        }
+                        manager.addEvent(fileEvent);
                     }
 
                     manager.submit();

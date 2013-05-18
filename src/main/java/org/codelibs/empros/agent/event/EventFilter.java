@@ -17,6 +17,6 @@ package org.codelibs.empros.agent.event;
 
 public interface EventFilter {
 
-    Event convert(Event target);
+    public Event convert(Event target);
 
 }
