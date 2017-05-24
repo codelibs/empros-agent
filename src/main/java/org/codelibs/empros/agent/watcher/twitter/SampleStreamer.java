@@ -1,14 +1,21 @@
 package org.codelibs.empros.agent.watcher.twitter;
 
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.codelibs.empros.agent.event.Event;
 import org.codelibs.empros.agent.event.EventManager;
 import org.codelibs.empros.agent.watcher.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.*;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import twitter4j.StallWarning;
+import twitter4j.Status;
+import twitter4j.StatusDeletionNotice;
+import twitter4j.StatusListener;
+import twitter4j.TwitterStream;
+import twitter4j.TwitterStreamFactory;
+import twitter4j.User;
 
 public class SampleStreamer implements Watcher{
     private Logger logger = LoggerFactory.getLogger(SampleStreamer.class);

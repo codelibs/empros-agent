@@ -1,15 +1,15 @@
 package org.codelibs.empros.agent.watcher.file;
 
 
-import org.apache.commons.lang.StringUtils;
-import org.codelibs.empros.agent.event.Event;
-import org.codelibs.empros.agent.event.EventFilter;
-import org.codelibs.empros.agent.util.PropertiesUtil;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang.StringUtils;
+import org.codelibs.empros.agent.event.Event;
+import org.codelibs.empros.agent.event.EventFilter;
+import org.codelibs.empros.agent.util.PropertiesUtil;
 
 public class FileEventFilter implements EventFilter{
     private final String FILEWATCHER_PROPERTIES = "filewatcher.properties";

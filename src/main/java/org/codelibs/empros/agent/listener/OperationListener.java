@@ -16,9 +16,9 @@
 package org.codelibs.empros.agent.listener;
 
 
-import org.codelibs.empros.agent.event.Event;
-
 import java.util.List;
+
+import org.codelibs.empros.agent.event.Event;
 
 public interface OperationListener {
     public void successHandler(List<Event> eventList);

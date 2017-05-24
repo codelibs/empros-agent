@@ -15,7 +15,9 @@
  */
 package org.codelibs.empros.agent;
 
+import org.codelibs.empros.agent.operation.es.EsApiOperation;
 import org.codelibs.empros.agent.operation.rest.RestApiOperation;
+import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.codelibs.empros.agent.watcher.file.FileWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +27,9 @@ public class Main {
 
     private static EmprosAgent agent;
 
-    public static void main(final String[] args) {
+    private static final String EMPROSAPI_PROPERTIES = "emprosapi.properties";
+
+   public static void main(final String[] args) {
         String command = null;
         if (args.length > 0) {
             command = args[0];
@@ -60,7 +64,13 @@ public class Main {
         if (agent == null) {
             // TODO DI?
             agent = new EmprosAgent();
-            agent.setOperation(new RestApiOperation());
+            final String apiType = PropertiesUtil
+                    .getAsString(EMPROSAPI_PROPERTIES, "apiType", "");
+            if (apiType.equals("es")) {
+                agent.setOperation(new EsApiOperation());
+            } else {
+                agent.setOperation(new RestApiOperation());
+            }
             agent.setWatcher(new FileWatcher());
         }
         return agent;
