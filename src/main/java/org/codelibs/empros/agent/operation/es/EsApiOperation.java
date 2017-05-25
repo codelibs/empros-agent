@@ -15,18 +15,20 @@
  */
 package org.codelibs.empros.agent.operation.es;
 
-import static org.codelibs.core.stream.StreamUtil.split;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.http.conn.ClientConnectionManager;
 import org.codelibs.empros.agent.event.Event;
@@ -53,9 +55,11 @@ public class EsApiOperation implements Operation {
 
     private static final String EMPROSAPI_PROPERTIES = "emprosapi.properties";
 
-    private final String[] esHosts;
+    private final List<Map<String, Object>> esHosts;
 
-    private final int esPort;
+    private final String esIndex;
+
+    private final String esType;
 
     private final int requestInterval;
 
@@ -73,14 +77,23 @@ public class EsApiOperation implements Operation {
     private final AtomicBoolean apiAvailable = new AtomicBoolean(false);
 
     public EsApiOperation() {
-        esHosts = split(
-                PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esHosts", ""),
-                ",").get(stream -> stream.filter(StringUtil::isNotBlank)
-                        .map(s -> s.trim()).toArray(n -> new String[n]));
-        if (esHosts.length == 0) {
+        esHosts = Stream.of(PropertiesUtil
+                .getAsString(EMPROSAPI_PROPERTIES, "esHosts", "").split(","))
+                .map(s -> new LinkedHashMap<String, Object>() {
+                    {
+                        final String[] pair = s.split(":");
+                        if (StringUtil.isEmpty(pair[1])) {
+                            pair[1] = "9300";
+                        }
+                        put("name", pair[0]);
+                        put("port", Integer.parseInt(pair[1]));
+                    }
+                }).collect(Collectors.toList());
+        if (esHosts.isEmpty()) {
             throw new EmprosSystemException("esHosts is empty.");
         }
-        esPort = PropertiesUtil.getAsInt(EMPROSAPI_PROPERTIES, "esPort", 9300);
+        esIndex = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esIndex", "empros");
+        esType = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esType", "event");
 
         requestInterval = PropertiesUtil.getAsInt(EMPROSAPI_PROPERTIES,
                 "requestInterval", 100);
@@ -91,10 +104,10 @@ public class EsApiOperation implements Operation {
                 .put("client.transport.ping_timeout", 10, TimeUnit.SECONDS)
                 .build();
         client = new PreBuiltTransportClient(settings);
-        for (final String host : esHosts) {
+        for (final Map<String, Object> host : esHosts) {
             try {
                 client.addTransportAddress(new InetSocketTransportAddress(
-                        InetAddress.getByName(host), esPort));
+                        InetAddress.getByName((String)host.get("name")), (int)host.get("port")));
             } catch (UnknownHostException e) {
                 logger.warn("Unknown host: {}", host, e);
             }
@@ -123,33 +136,32 @@ public class EsApiOperation implements Operation {
             return;
         }
 
-
         boolean isSuccess = false;
 
         try {
-            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            final BulkRequestBuilder bulkRequest = client.prepareBulk();
             for (final Event event : eventList) {
                 final XContentBuilder builder = jsonBuilder().startObject();
                 for (final Map.Entry<String, Object> entry : event.entrySet()) {
                     builder.field(entry.getKey(), entry.getValue().toString());
                 }
                 builder.endObject();
-                bulkRequest.add(client.prepareIndex("empros", "event")
+                bulkRequest.add(client.prepareIndex(esIndex, esType)
                         .setSource(builder));
-            }
-            BulkResponse bulkResponse = bulkRequest.get();
-            if (logger.isDebugEnabled()) {
-                logger.debug("bulkRequest: {}", bulkRequest);
-                logger.debug("bulkResponse: {}", bulkResponse);
-            }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Event: {}", event);
+                }
+           }
+            final BulkResponse bulkResponse = bulkRequest.get();
 
             if (bulkResponse.hasFailures()) {
                 isSuccess = false;
+                logger.warn("bulkResponse.buildFailureMessage: {}", bulkResponse.buildFailureMessage());
             } else {
                 isSuccess = true;
             }
         } catch (final Exception e) {
-            logger.warn("Could not put: {}:{}", esHosts, esPort, e);
+            logger.warn("Could not put: {}:{}", esHosts, e);
             isSuccess = false;
         }
 
