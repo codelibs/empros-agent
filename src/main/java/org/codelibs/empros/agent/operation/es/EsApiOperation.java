@@ -64,6 +64,7 @@ public class EsApiOperation implements Operation {
     private final int requestInterval;
 
     private final Settings settings;
+
     private final TransportClient client;
 
     private final List<OperationListener> listenerList = new ArrayList<OperationListener>();
@@ -75,6 +76,8 @@ public class EsApiOperation implements Operation {
     private final long apiMonitorInterval;
 
     private final AtomicBoolean apiAvailable = new AtomicBoolean(false);
+
+    private final String ES_FIELD_ENCODING = "UTF-8";
 
     public EsApiOperation() {
         esHosts = Stream.of(PropertiesUtil
@@ -143,7 +146,11 @@ public class EsApiOperation implements Operation {
             for (final Event event : eventList) {
                 final XContentBuilder builder = jsonBuilder().startObject();
                 for (final Map.Entry<String, Object> entry : event.entrySet()) {
-                    builder.field(entry.getKey(), entry.getValue().toString());
+                    builder.field(entry.getKey(),
+                            new String(
+                                    entry.getValue().toString()
+                                            .getBytes(ES_FIELD_ENCODING),
+                                    ES_FIELD_ENCODING));
                 }
                 builder.endObject();
                 bulkRequest.add(client.prepareIndex(esIndex, esType)
@@ -151,7 +158,7 @@ public class EsApiOperation implements Operation {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Event: {}", event);
                 }
-           }
+            }
             final BulkResponse bulkResponse = bulkRequest.get();
 
             if (bulkResponse.hasFailures()) {
