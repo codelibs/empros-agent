@@ -7,7 +7,7 @@ prunsrv.exe //IS//EmprosAgent ^
 --Description="empros agent" ^
 --Install="%EMPROSAGENT_HOME%\bin\prunsrv.exe" ^
 --Jvm=auto ^
---Classpath="%EMPROSAGENT_HOME%\conf\;%EMPROSAGENT_HOME%\bin\empros-agent-1.0.1-jar-with-dependencies.jar" ^
+--Classpath="%EMPROSAGENT_HOME%\conf\;%EMPROSAGENT_HOME%\bin\empros-agent-1.0.2-jar-with-dependencies.jar" ^
 --LogPath="%EMPROSAGENT_HOME%\logs" ^
 --StdOutput=auto ^
 --StdError=auto ^

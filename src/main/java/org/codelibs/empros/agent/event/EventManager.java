@@ -143,6 +143,13 @@ public class EventManager {
                         }
                     }
                 } else {
+                    if(operationInterval > 0) {
+                        try {
+                            sleep(operationInterval);
+                        } catch(InterruptedException e) {
+                        }
+                    }
+
                     final Set<Event> eventSet = new LinkedHashSet<>();
                     while (eventSet.size() < eventSizeInRequest) {
                         final Event event = eventQueue.poll();
@@ -151,6 +158,7 @@ public class EventManager {
                         }
                         Event convertedEvent = convert(event);
                         if(convertedEvent != null) {
+                            eventSet.remove(convertedEvent);
                             eventSet.add(convertedEvent);
                         }
                     }
@@ -162,13 +170,6 @@ public class EventManager {
                                 operation.excute(new ArrayList<>(eventSet));
                             }
                         });
-
-                        if(operationInterval > 0) {
-                            try {
-                                sleep(operationInterval);
-                            } catch(InterruptedException e) {
-                            }
-                        }
                     }
                 }
             }
