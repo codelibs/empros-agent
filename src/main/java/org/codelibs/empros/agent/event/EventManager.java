@@ -106,6 +106,7 @@ public class EventManager {
             logger.warn("Added event is null.");
             return;
         }
+        eventQueue.remove(event);
         eventQueue.add(event);
     }
 
@@ -158,7 +159,6 @@ public class EventManager {
                         }
                         Event convertedEvent = convert(event);
                         if(convertedEvent != null) {
-                            eventSet.remove(convertedEvent);
                             eventSet.add(convertedEvent);
                         }
                     }
