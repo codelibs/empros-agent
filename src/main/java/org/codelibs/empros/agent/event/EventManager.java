@@ -55,6 +55,8 @@ public class EventManager {
 
     protected final AtomicBoolean running = new AtomicBoolean(false);
 
+    protected final AtomicBoolean executing = new AtomicBoolean(false);
+
     protected MonitoringThread monitoringThread;
 
     protected final boolean backupAndRestore;
@@ -96,6 +98,7 @@ public class EventManager {
 
     public void setOperation(final Operation operation) {
         this.operation = operation;
+        this.operation.addOperationListener(new ResultHandler());
         if (backupAndRestore) {
             this.operation.addOperationListener(new EventBackupListener());
         }
@@ -106,8 +109,13 @@ public class EventManager {
             logger.warn("Added event is null.");
             return;
         }
+        executing.set(true);
         eventQueue.remove(event);
         eventQueue.add(event);
+    }
+
+    public boolean isExecuting() {
+        return executing.get();
     }
 
     public void submit() {
@@ -173,6 +181,25 @@ public class EventManager {
                     }
                 }
             }
+        }
+    }
+
+    private class ResultHandler implements OperationListener {
+        @Override
+        public void successHandler(List<Event> eventList) {
+            if (eventQueue.isEmpty()) {
+                executing.set(false);
+            }
+        }
+
+        @Override
+        public void errorHandler(List<Event> eventList) {
+
+        }
+
+        @Override
+        public void restoredHandler() {
+
         }
     }
 

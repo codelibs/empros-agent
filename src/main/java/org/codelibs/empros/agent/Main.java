@@ -15,8 +15,11 @@
  */
 package org.codelibs.empros.agent;
 
+import org.codelibs.empros.agent.operation.Operation;
 import org.codelibs.empros.agent.operation.es.EsApiOperation;
+import org.codelibs.empros.agent.operation.logging.LoggingOperation;
 import org.codelibs.empros.agent.operation.rest.RestApiOperation;
+import org.codelibs.empros.agent.scanner.file.FileScanner;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.codelibs.empros.agent.watcher.file.FileWatcher;
 import org.slf4j.Logger;
@@ -55,6 +58,17 @@ public class Main {
 
             final EmprosAgent agent = getAgent();
             agent.stop();
+        } else if ("scan".equals(command)) {
+            EmprosAgent agent = new EmprosAgent();
+            agent.setOperation(getOperation());
+            agent.setScanner(new FileScanner());
+            if (!agent.scan()) {
+                System.out.println("Failed to start scan.");
+                System.exit(1);
+            }
+            agent.destroy();
+            logger.info("Application is finished.");
+            System.exit(0);
         } else {
             logger.warn("Unexpected args: " + command);
         }
@@ -64,16 +78,24 @@ public class Main {
         if (agent == null) {
             // TODO DI?
             agent = new EmprosAgent();
-            final String apiType = PropertiesUtil
-                    .getAsString(EMPROSAPI_PROPERTIES, "apiType", "");
-            if (apiType.equals("es")) {
-                agent.setOperation(new EsApiOperation());
-            } else {
-                agent.setOperation(new RestApiOperation());
-            }
+            agent.setOperation(getOperation());
             agent.setWatcher(new FileWatcher());
         }
         return agent;
+    }
+
+    private static synchronized Operation getOperation() {
+        final String apiType = PropertiesUtil
+            .getAsString(EMPROSAPI_PROPERTIES, "apiType", "");
+        Operation operation;
+        if (apiType.equals("es")) {
+            operation = new EsApiOperation();
+        } else if(apiType.equals("logging")) {
+            operation = new LoggingOperation();
+        } else {
+            operation = new RestApiOperation();
+        }
+        return operation;
     }
 
     private static synchronized void removeAgent() {

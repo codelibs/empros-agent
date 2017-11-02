@@ -144,7 +144,7 @@ public class FileWatchTask extends Thread {
         }
     }
 
-    protected Event createEvent(final String kind, final Path path, final long timestamp) {
+    public static Event createEvent(final String kind, final Path path, final long timestamp) {
         final Event fileEvent = new Event();
         fileEvent.put(FILE, path.toString().replace("\\", "/"));
         fileEvent.put(KIND, kind);

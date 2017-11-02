@@ -57,6 +57,8 @@ public class EsApiOperation implements Operation {
 
     private final List<Map<String, Object>> esHosts;
 
+    private final String esClusterName;
+
     private final String esIndex;
 
     private final String esType;
@@ -95,15 +97,17 @@ public class EsApiOperation implements Operation {
         if (esHosts.isEmpty()) {
             throw new EmprosSystemException("esHosts is empty.");
         }
+        esClusterName = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esClusterName", "elasticsearch");
         esIndex = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esIndex", "empros");
         esType = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esType", "event");
 
         requestInterval = PropertiesUtil.getAsInt(EMPROSAPI_PROPERTIES,
                 "requestInterval", 100);
         apiMonitorInterval = PropertiesUtil.getAsLong(EMPROSAPI_PROPERTIES,
-                "apiMonitorInterval", 1 * 60 * 1000);
+                "apiMonitorInterval", 10 * 1000);
 
         settings = Settings.builder()
+                .put("cluster.name", esClusterName)
                 .put("client.transport.ping_timeout", 10, TimeUnit.SECONDS)
                 .build();
         client = new PreBuiltTransportClient(settings);
@@ -263,6 +267,7 @@ public class EsApiOperation implements Operation {
     protected class ApiMonitor extends TimerTask {
         @Override
         public void run() {
+            logger.info("monitoring");
             boolean before = apiAvailable.get();
             boolean after = isReachable();
             apiAvailable.set(after);

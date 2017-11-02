@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.codelibs.empros.agent.event.EventFilter;
 import org.codelibs.empros.agent.event.EventManager;
 import org.codelibs.empros.agent.operation.Operation;
+import org.codelibs.empros.agent.scanner.Scanner;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.codelibs.empros.agent.watcher.Watcher;
 import org.seasar.util.lang.ClassUtil;
@@ -39,6 +40,8 @@ public class EmprosAgent {
     private Operation operation;
 
     private Watcher watcher;
+
+    private Scanner scanner;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
@@ -97,8 +100,52 @@ public class EmprosAgent {
         return true;
     }
 
+    public boolean scan() {
+        if (operation == null) {
+            logger.warn("EmprosAgent has no operation.");
+            return false;
+        }
+
+        if (started.getAndSet(true)) {
+            logger.warn("EmprosAgent is already started.");
+            return false;
+        }
+
+        logger.info("EmprosAgent is started.");
+
+        eventManager.setOperation(operation);
+        eventManager.start();
+
+        scanner.setEventManager(eventManager);
+
+        long start = System.currentTimeMillis();
+        scanner.start();
+
+        while (scanner.isRunning()) {
+            try {
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException ignore) {}
+
+        }
+
+        while(eventManager.isExecuting()) {
+            try {
+                logger.info("waiting event process");
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException ignore) {}
+        }
+
+        logger.info("Scan is finished. took:{} min", (System.currentTimeMillis() - start) / (60 * 1000));
+        return true;
+    }
+
     public void destroy() {
-        watcher.stop();
+        if (watcher != null) {
+            watcher.stop();
+        }
+        if (scanner != null) {
+            scanner.stop();
+        }
         eventManager.stop();
         operation.destroy();
     }
@@ -121,4 +168,7 @@ public class EmprosAgent {
         this.watcher = watcher;
     }
 
+    public void setScanner(final Scanner scanner) {
+        this.scanner = scanner;
+    }
 }
