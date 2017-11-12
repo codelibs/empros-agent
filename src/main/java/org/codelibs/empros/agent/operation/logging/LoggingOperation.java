@@ -25,6 +25,8 @@ public class LoggingOperation implements Operation {
         for (final Event event: events ) {
             logger.info("count:{} Event:{} ", eventCount.incrementAndGet(), event);
         }
+
+        callbackResultSuccess(events);
     }
 
     @Override
