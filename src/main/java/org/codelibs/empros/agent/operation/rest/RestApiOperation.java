@@ -172,7 +172,7 @@ public class RestApiOperation implements Operation {
                 httpEntity = response.getEntity();
                 final int status = response.getStatusLine().getStatusCode();
                 if (logger.isDebugEnabled()) {
-                    logger.debug("response: " + response.toString());
+                    logger.debug("response: {}", response.toString());
                 }
 
                 if (status == HttpStatus.SC_OK) {
@@ -255,7 +255,7 @@ public class RestApiOperation implements Operation {
         httpPost.setEntity(new StringEntity(json, "UTF-8"));
 
         if (logger.isDebugEnabled()) {
-            logger.debug("requestLine: " + httpPost.getRequestLine());
+            logger.debug("requestLine: {}", httpPost.getRequestLine());
             logger.debug("requestBody: "
                     + EntityUtils.toString(httpPost.getEntity()));
         }
