@@ -233,7 +233,7 @@ public class EventManager {
                     }
                     logger.debug(logBuffer.toString());
                 }
-                logger.debug("Event Backup to -> " + file.getAbsolutePath());
+                logger.debug("Event Backup to -> {}", file.getAbsolutePath());
             }
 
             FileOutputStream outFile = null;
