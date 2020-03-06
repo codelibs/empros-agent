@@ -115,8 +115,7 @@ public class FileWatchTask extends Thread {
                         final Path context = (Path) event.context();
                         final Path path = watchPath.resolve(context);
                         if (logger.isDebugEnabled()) {
-                            logger.debug(event.kind() + ": count="
-                                    + event.count() + " " + path);
+                            logger.debug("{}: count={} {}", event.kind(), event.count(), path);
                         }
 
                         final Event fileEvent = createEvent(kind, path, timestamp);
