@@ -103,19 +103,29 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<version>1.9.0</version>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>3.0</version>
 				<configuration>
-					<header>${basedir}/src/etc/header.txt</header>
+					<header>https://www.codelibs.org/assets/license/header.txt</header>
+					<properties>
+						<year>2020</year>
+					</properties>
 					<includes>
 						<include>src/**/*.java</include>
 					</includes>
 					<encoding>UTF-8</encoding>
 					<headerDefinitions>
-						<headerDefinition>${basedir}/src/etc/header-definition.xml</headerDefinition>
+						<headerDefinition>https://www.codelibs.org/assets/license/header-definition-2.xml</headerDefinition>
 					</headerDefinitions>
 				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 		<extensions>
