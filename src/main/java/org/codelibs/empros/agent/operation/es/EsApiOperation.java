@@ -41,7 +41,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.seasar.util.lang.StringUtil;
@@ -113,7 +113,7 @@ public class EsApiOperation implements Operation {
         client = new PreBuiltTransportClient(settings);
         for (final Map<String, Object> host : esHosts) {
             try {
-                client.addTransportAddress(new InetSocketTransportAddress(
+                client.addTransportAddress(new TransportAddress(
                         InetAddress.getByName((String)host.get("name")), (int)host.get("port")));
             } catch (UnknownHostException e) {
                 logger.warn("Unknown host: {}", host, e);
