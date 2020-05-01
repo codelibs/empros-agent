@@ -36,8 +36,8 @@ public class LoggingOperation implements Operation {
     }
 
     @Override
-    public void excute(List<Event> events) {
-        for (final Event event: events ) {
+    public void excute(final List<Event> events) {
+        for (final Event event: events) {
             logger.info("count:{} Event:{} ", eventCount.incrementAndGet(), event);
         }
 
@@ -49,17 +49,17 @@ public class LoggingOperation implements Operation {
 
     }
 
-    private void callbackResultSuccess(List<Event> eventList) {
-        if (listenerList.size() > 0) {
-            for (OperationListener listener : listenerList) {
+    private void callbackResultSuccess(final List<Event> eventList) {
+        if (!listenerList.isEmpty()) {
+            for (final OperationListener listener : listenerList) {
                 listener.successHandler(eventList);
             }
         }
     }
 
-    private void callbackResultError(List<Event> eventList) {
-        if (listenerList.size() > 0) {
-            for (OperationListener listener : listenerList) {
+    private void callbackResultError(final List<Event> eventList) {
+        if (!listenerList.isEmpty()) {
+            for (final OperationListener listener : listenerList) {
                 listener.errorHandler(eventList);
             }
         }

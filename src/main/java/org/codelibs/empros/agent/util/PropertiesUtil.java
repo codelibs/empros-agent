@@ -30,7 +30,7 @@ public class PropertiesUtil {
     private static final Logger logger = LoggerFactory
             .getLogger(PropertiesUtil.class);
 
-    private static final Map<String, PropData> propDataMap = new ConcurrentHashMap<String, PropData>();
+    private static final Map<String, PropData> propDataMap = new ConcurrentHashMap<>();
 
     public static String getAsString(final String path, final String key,
                                      final String defaultValue) {
@@ -75,21 +75,12 @@ public class PropertiesUtil {
             }
 
             final Properties props = new Properties();
-            InputStream in = null;
-            try {
-                in = ClassLoader.getSystemResourceAsStream(path);
+            try (final InputStream in = ClassLoader.getSystemResourceAsStream(path)) {
                 if (in != null) {
                     props.load(in);
                 }
             } catch (final IOException e) {
-                logger.warn("Could not read ", path);
-            } finally {
-                try {
-                    if (in != null) {
-                        in.close();
-                    }
-                } catch (final IOException e) {
-                }
+                logger.warn("Could not read {}", path);
             }
             propDataMap.put(path,
                     new PropData(props, System.currentTimeMillis()));

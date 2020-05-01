@@ -15,11 +15,8 @@
  */
 package org.codelibs.empros.agent.event;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -120,7 +117,7 @@ public class EventManager {
 
     public void submit() {
         synchronized (this) {
-            notify();
+            notifyAll();
         }
     }
 
@@ -149,13 +146,15 @@ public class EventManager {
                         try {
                             EventManager.this.wait();
                         } catch (final InterruptedException e) {
+                            // ignore
                         }
                     }
                 } else {
                     if(operationInterval > 0) {
                         try {
                             sleep(operationInterval);
-                        } catch(InterruptedException e) {
+                        } catch(final InterruptedException e) {
+                            // ignore
                         }
                     }
 
@@ -172,12 +171,9 @@ public class EventManager {
                     }
 
                     if (!eventSet.isEmpty()) {
-                        executorService.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                operation.excute(new ArrayList<>(eventSet));
-                            }
-                        });
+                        executorService.execute(() ->
+                                operation.excute(new ArrayList<>(eventSet))
+                        );
                     }
                 }
             }
@@ -186,7 +182,7 @@ public class EventManager {
 
     private class ResultHandler implements OperationListener {
         @Override
-        public void successHandler(List<Event> eventList) {
+        public void successHandler(final List<Event> eventList) {
             if (eventQueue.isEmpty()) {
                 executing.set(false);
             }
@@ -194,12 +190,12 @@ public class EventManager {
 
         @Override
         public void errorHandler(List<Event> eventList) {
-
+            // do nothing
         }
 
         @Override
         public void restoredHandler() {
-
+            // do nothing
         }
     }
 
@@ -217,15 +213,15 @@ public class EventManager {
         }
 
         @Override
-        public void errorHandler(List<Event> eventList) {
-            String fileName = backupDirectory
+        public void errorHandler(final List<Event> eventList) {
+            final String fileName = backupDirectory
                     + filePrefix + (new Date()).getTime() + "-" + Thread.currentThread().getName();
-            File file = new File(fileName);
+            final File file = new File(fileName);
             if (logger.isDebugEnabled()) {
                 logger.debug("Callded Error Handler.");
-                for (Event event : eventList) {
-                    StringBuilder logBuffer = new StringBuilder("Back up event-> ");
-                    for (Map.Entry<String, Object> entry : event.entrySet()) {
+                for (final Event event : eventList) {
+                    final StringBuilder logBuffer = new StringBuilder("Back up event-> ");
+                    for (final Map.Entry<String, Object> entry : event.entrySet()) {
                         logBuffer.append(entry.getKey());
                         logBuffer.append(":");
                         logBuffer.append(entry.getValue().toString());
@@ -236,39 +232,22 @@ public class EventManager {
                 logger.debug("Event Backup to -> {}", file.getAbsolutePath());
             }
 
-            FileOutputStream outFile = null;
-            ObjectOutputStream outObject = null;
-            try {
-                outFile = new FileOutputStream(file);
-                outObject = new ObjectOutputStream(outFile);
+            try (final FileOutputStream outFile = new FileOutputStream(file);
+                 final ObjectOutputStream outObject = new ObjectOutputStream(outFile)
+            ) {
                 outObject.writeObject(eventList);
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 logger.warn("Failed to export backup event.", e);
-            } finally {
-                if (outObject != null) {
-                    try {
-                        outObject.close();
-                    } catch (Exception e) {
-
-                    }
-                }
-                if (outFile != null) {
-                    try {
-                        outFile.close();
-                    } catch (Exception e) {
-
-                    }
-                }
             }
         }
 
         private void restoreEvents() {
-            File dir = new File(backupDirectory);
+            final File dir = new File(backupDirectory);
             if (!dir.isDirectory()) {
-                logger.warn(dir.getAbsolutePath() + " is not a directory.");
+                logger.warn("{} is not a directory.", dir.getAbsolutePath());
                 return;
             }
-            List<Event> restoreEventList = new ArrayList<Event>();
+            final List<Event> restoreEventList = new ArrayList<>();
 
             synchronized (this) {
                 if (!exsitsBackupEvent(dir)) {
@@ -276,51 +255,39 @@ public class EventManager {
                 }
 
                 File[] files = dir.listFiles();
-                List<File> bkFileList = new ArrayList<File>();
-                for (File file : files) {
+                final List<File> bkFileList = new ArrayList<>();
+                for (final File file : files) {
                     if (file.getName().startsWith(filePrefix)) {
                         bkFileList.add(file);
                     }
                 }
 
-                for (File file : bkFileList) {
-                    FileInputStream inFile = null;
-                    ObjectInputStream inObject = null;
-                    try {
-                        inFile = new FileInputStream(file);
-                        inObject = new ObjectInputStream(inFile);
-                        List<Event> events = (List<Event>) inObject.readObject();
+                for (final File file : bkFileList) {
+                    try (final FileInputStream inFile = new FileInputStream(file);
+                         final ObjectInputStream inObject = new ObjectInputStream(inFile)
+                    ) {
+                        final List<Event> events = (List<Event>) inObject.readObject();
                         restoreEventList.addAll(events);
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         logger.warn("Failed to restore event.", e);
-                    } finally {
-                        if (inObject != null) {
-                            try {
-                                inObject.close();
-                            } catch (Exception e) {
+                    }
 
-                            }
-                        }
-                        if (inFile != null) {
-                            try {
-                                inFile.close();
-                            } catch (Exception e) {
-
-                            }
-                        }
-                        file.delete();
+                    try {
+                        Files.deleteIfExists(file.toPath());
+                    } catch (final IOException e) {
+                        logger.warn("Failed to delete file.", e);
                     }
                 }
             }
             if (logger.isInfoEnabled()) {
-                logger.info("Restored Event Num: " + restoreEventList.size());
+                logger.info("Restored Event Num: {}", restoreEventList.size());
             }
 
             int eventCount = 0;
-            for (Event event : restoreEventList) {
+            for (final Event event : restoreEventList) {
                 if (logger.isDebugEnabled()) {
-                    StringBuilder logBuffer = new StringBuilder("Restored event-> ");
-                    for (Map.Entry<String, Object> entry : event.entrySet()) {
+                    final StringBuilder logBuffer = new StringBuilder("Restored event-> ");
+                    for (final Map.Entry<String, Object> entry : event.entrySet()) {
                         logBuffer.append(entry.getKey());
                         logBuffer.append(":");
                         logBuffer.append(entry.getValue().toString());
@@ -339,23 +306,21 @@ public class EventManager {
             submit();
         }
 
-        private boolean exsitsBackupEvent(File dir) {
+        private boolean exsitsBackupEvent(final File dir) {
             if (!dir.isDirectory()) {
                 return false;
             }
             File[] files = dir.listFiles();
-            if (files.length == 0) {
+            if (files == null || files.length == 0) {
                 return false;
             }
 
-            boolean ret = false;
-            for (File file : files) {
+            for (final File file : files) {
                 if (file.getName().startsWith(filePrefix)) {
-                    ret = true;
-                    break;
+                    return true;
                 }
             }
-            return ret;
+            return false;
         }
     }
 }

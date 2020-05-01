@@ -87,16 +87,14 @@ public class Main {
     private static synchronized Operation getOperation() {
         final String apiType = PropertiesUtil
             .getAsString(EMPROSAPI_PROPERTIES, "apiType", "");
-        Operation operation;
         if (apiType.equals("es")) {
-            operation = new EsApiOperation();
+            return new EsApiOperation();
         } else if(apiType.equals("logging")) {
-            operation = new LoggingOperation();
+            return new LoggingOperation();
         } else {
-            operation = new RestApiOperation();
+            return new RestApiOperation();
         }
-        return operation;
-    }
+   }
 
     private static synchronized void removeAgent() {
         agent = null;

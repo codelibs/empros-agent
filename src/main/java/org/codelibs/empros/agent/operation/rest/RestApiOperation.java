@@ -76,7 +76,7 @@ public class RestApiOperation implements Operation {
 
     private final ConnectionMonitor connectionMonitor;
 
-    private final List<OperationListener> listenerList = new ArrayList<OperationListener>();
+    private final List<OperationListener> listenerList = new ArrayList<>();
 
     private final ApiMonitor apiMonitor;
 
@@ -101,12 +101,12 @@ public class RestApiOperation implements Operation {
         maxRetryCount = PropertiesUtil.getAsInt(EMPROSAPI_PROPERTIES,
                 "maxRetryCount", 5);
         apiMonitorInterval = PropertiesUtil.getAsLong(EMPROSAPI_PROPERTIES,
-                "apiMonitorInterval", 1 * 60 * 1000);
+                "apiMonitorInterval", 1 * 60 * 1000L);
 
         final long connectionCheckInterval = PropertiesUtil.getAsLong(
-                EMPROSAPI_PROPERTIES, "connectionCheckInterval", 5000);
+                EMPROSAPI_PROPERTIES, "connectionCheckInterval", 5000L);
         final long idleConnectionTimeout = PropertiesUtil.getAsLong(
-                EMPROSAPI_PROPERTIES, "idleConnectionTimeout", 60 * 1000);
+                EMPROSAPI_PROPERTIES, "idleConnectionTimeout", 60 * 1000L);
 
         final SchemeRegistry schemeRegistry = new SchemeRegistry();
         schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory
@@ -172,7 +172,7 @@ public class RestApiOperation implements Operation {
                 httpEntity = response.getEntity();
                 final int status = response.getStatusLine().getStatusCode();
                 if (logger.isDebugEnabled()) {
-                    logger.debug("response: {}", response.toString());
+                    logger.debug("response: {}", response);
                 }
 
                 if (status == HttpStatus.SC_OK) {
@@ -186,10 +186,7 @@ public class RestApiOperation implements Operation {
                     }
                 } else {
                     final String content = getContentAsString(httpEntity);
-                    logger.warn("HTTPRequest error. status code:" + status
-                            + " retry:" + retryCount + " url:" + url
-                            + ", content: " + content);
-
+                    logger.warn("HTTPRequest error. status code: {}, retry: {}, url: {}, content: {}", status, retryCount, url, content);
                     if (retryCount < maxRetryCount) {
                         retryCount++;
                     } else {
@@ -376,12 +373,12 @@ public class RestApiOperation implements Operation {
             if (!after) {
                 if (after != before) {
                     if (logger.isInfoEnabled()) {
-                        logger.info("Api Monitoring. Server is not available. " + url);
+                        logger.info("Api Monitoring. Server is not available. {}", url);
                     }
                 }
             } else if (after != before) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("Api Monitoring. Server was restored. " + url);
+                    logger.info("Api Monitoring. Server was restored. {}", url);
                 }
                 callbackResoted();
             }
@@ -398,7 +395,7 @@ public class RestApiOperation implements Operation {
             } catch (ConnectTimeoutException e) {
                 reached = false;
             } catch (Exception e) {
-                logger.warn("Failed to monitor api. " + url);
+                logger.warn("Failed to monitor api. {}", url);
                 reached = false;
             }
             return reached;

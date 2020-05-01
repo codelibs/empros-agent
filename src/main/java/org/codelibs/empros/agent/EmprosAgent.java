@@ -118,13 +118,15 @@ public class EmprosAgent {
 
         scanner.setEventManager(eventManager);
 
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         scanner.start();
 
         while (scanner.isRunning()) {
             try {
                 Thread.sleep(10 * 1000);
-            } catch (InterruptedException ignore) {}
+            } catch (InterruptedException ignore) {
+                // ignore
+            }
 
         }
 
@@ -132,7 +134,9 @@ public class EmprosAgent {
             try {
                 logger.info("waiting event process");
                 Thread.sleep(10 * 1000);
-            } catch (InterruptedException ignore) {}
+            } catch (InterruptedException ignore) {
+                // ignore
+            }
         }
 
         logger.info("Scan is finished. took:{} min", (System.currentTimeMillis() - start) / (60 * 1000));

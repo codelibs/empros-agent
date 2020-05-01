@@ -40,7 +40,7 @@ public class FileEventFilter implements EventFilter{
     public FileEventFilter() {
         int count = 1;
         while (true) {
-            String excludePath = PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, EXCLUDE_KEY + count, null);
+            final String excludePath = PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, EXCLUDE_KEY + count, null);
             if (StringUtils.isBlank(excludePath)) {
                 break;
             }
@@ -52,49 +52,39 @@ public class FileEventFilter implements EventFilter{
     }
 
     @Override
-    public Event convert(Event target) {
+    public Event convert(final Event target) {
         boolean ret = true;
         if (excludeNoneFileExtension) {
             ret = filterByExtension(target);
         }
-        if (ret && excludePathList.size() > 0) {
+        if (ret && !excludePathList.isEmpty()) {
             ret = filterByExcludePath(target);
         }
 
-        if(!ret) {
-            return null;
-        }
-        return target;
+        return ret ? target : null;
     }
 
-    private boolean filterByExtension(Event event) {
-        boolean ret = true;
-        String path = (String) event.get(FileWatchTask.FILE);
-        if (StringUtils.isNotBlank(path)) {
-            if (path.lastIndexOf("/") > 0) {
-                String filename = path.substring(path.lastIndexOf("/") + 1);
-                if (!filename.contains(".")) {
-                    ret = false;
-                }
-            }
+    private boolean filterByExtension(final Event event) {
+        final String path = (String) event.get(FileWatchTask.FILE);
+        if (StringUtils.isNotBlank(path) && path.lastIndexOf('/') > 0) {
+            final String filename = path.substring(path.lastIndexOf('/') + 1);
+            return filename.contains(".");
         }
-        return ret;
+        return true;
     }
 
-    private boolean filterByExcludePath(Event event) {
-        boolean ret = true;
-        String path = (String) event.get(FileWatchTask.FILE);
+    private boolean filterByExcludePath(final Event event) {
+        final String path = (String) event.get(FileWatchTask.FILE);
         if (StringUtils.isNotBlank(path)) {
-            for (String excludePath : excludePathList) {
-                Pattern p = Pattern.compile(excludePath);
-                Matcher m = p.matcher(path);
+            for (final String excludePath : excludePathList) {
+                final Pattern p = Pattern.compile(excludePath);
+                final Matcher m = p.matcher(path);
                 if(m.find()) {
-                    ret = false;
-                    break;
+                    return false;
                 }
             }
         }
 
-        return ret;
+        return true;
     }
 }

@@ -194,7 +194,7 @@ public class EsApiOperation implements Operation {
     }
 
     private void callbackResultSuccess(List<Event> eventList) {
-        if (listenerList.size() > 0) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.successHandler(eventList);
             }
@@ -202,7 +202,7 @@ public class EsApiOperation implements Operation {
     }
 
     private void callbackResultError(List<Event> eventList) {
-        if (listenerList.size() > 0) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.errorHandler(eventList);
             }
@@ -210,7 +210,7 @@ public class EsApiOperation implements Operation {
     }
 
     private void callbackResoted() {
-        if (listenerList.size() > 0) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.restoredHandler();
             }
@@ -274,12 +274,12 @@ public class EsApiOperation implements Operation {
             if (!after) {
                 if (after != before) {
                     if (logger.isInfoEnabled()) {
-                        logger.info("Api Monitoring. Server is not available. " + esHosts);
+                        logger.info("Api Monitoring. Server is not available. {}", esHosts);
                     }
                 }
             } else if (after != before) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("Api Monitoring. Server was restored. " + esHosts);
+                    logger.info("Api Monitoring. Server was restored. {}", esHosts);
                 }
                 callbackResoted();
             }
@@ -289,7 +289,7 @@ public class EsApiOperation implements Operation {
         private boolean isReachable() {
             List<DiscoveryNode> connectedNodes = client.connectedNodes();
             if (connectedNodes.isEmpty()) {
-                logger.warn("Failed to monitor api. " + esHosts);
+                logger.warn("Failed to monitor api. {}", esHosts);
                 return false;
             } else {
                 return true;
