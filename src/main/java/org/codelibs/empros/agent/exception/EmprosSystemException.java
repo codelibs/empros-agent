@@ -15,14 +15,14 @@
  */
 package org.codelibs.empros.agent.exception;
 
-import org.seasar.util.exception.SRuntimeException;
+import org.codelibs.core.exception.ClRuntimeException;
 
 /**
  * EmprosSystemException is a system exception class on Empros Agent.
  *
  * @author shinsuke
  */
-public class EmprosSystemException extends SRuntimeException {
+public class EmprosSystemException extends ClRuntimeException {
 
     private static final long serialVersionUID = 1L;
 
