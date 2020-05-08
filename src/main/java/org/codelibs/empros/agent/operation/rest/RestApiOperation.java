@@ -30,21 +30,24 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.codelibs.core.io.CloseableUtil;
 import org.codelibs.core.io.InputStreamUtil;
@@ -59,8 +62,7 @@ import org.slf4j.LoggerFactory;
 
 public class RestApiOperation implements Operation {
 
-    private static final Logger logger = LoggerFactory
-            .getLogger(RestApiOperation.class);
+    private static final Logger logger = LoggerFactory.getLogger(RestApiOperation.class);
 
     private static final String EMPROSAPI_PROPERTIES = "emprosapi.properties";
 
@@ -72,7 +74,7 @@ public class RestApiOperation implements Operation {
 
     private final int maxRetryCount;
 
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
 
     private final ConnectionMonitor connectionMonitor;
 
@@ -108,20 +110,30 @@ public class RestApiOperation implements Operation {
         final long idleConnectionTimeout = PropertiesUtil.getAsLong(
                 EMPROSAPI_PROPERTIES, "idleConnectionTimeout", 60 * 1000L);
 
-        final SchemeRegistry schemeRegistry = new SchemeRegistry();
-        schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory
-                .getSocketFactory()));
-        schemeRegistry.register(new Scheme("https", 443, SSLSocketFactory
-                .getSocketFactory()));
-        final ClientConnectionManager clientConnectionManager = new PoolingClientConnectionManager(
-                schemeRegistry, 5, TimeUnit.MINUTES);
-
-        httpClient = new DefaultHttpClient(clientConnectionManager);
-        HttpParams httpParams = httpClient.getParams();
+        final HttpClientBuilder builder = HttpClientBuilder.create();
+        final PlainConnectionSocketFactory plainConnectionFactory = new PlainConnectionSocketFactory();
+        final SSLConnectionSocketFactory sslConnectionFactory = buildSSLSocketFactory();
+        builder.setSSLSocketFactory(sslConnectionFactory);
+        final Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", plainConnectionFactory)
+                .register("https", sslConnectionFactory)
+                .build();
+        final RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectionRequestTimeout(10 * 1000)
+                .setSocketTimeout(10 * 1000)
+                .build();
 
         // TODO auth
-        HttpConnectionParams.setConnectionTimeout(httpParams, 10 * 1000);
-        HttpConnectionParams.setSoTimeout(httpParams, 10 * 1000);
+        //final RegistryBuilder<AuthSchemeProvider> authSchemeProviderBuilder = RegistryBuilder.create();
+
+        builder.setDefaultRequestConfig(requestConfig);
+
+        final HttpClientConnectionManager clientConnectionManager = new PoolingHttpClientConnectionManager(
+                registry, null, null, null,5, TimeUnit.MINUTES);
+
+        builder.setConnectionManager(clientConnectionManager);
+
+        httpClient = builder.build();
 
         connectionMonitor = new ConnectionMonitor(clientConnectionManager,
                 connectionCheckInterval, idleConnectionTimeout);
@@ -133,11 +145,26 @@ public class RestApiOperation implements Operation {
         apiMonitorTimer.schedule(apiMonitor, 0, apiMonitorInterval);
     }
 
+    protected SSLConnectionSocketFactory buildSSLSocketFactory() {
+        try {
+            final SSLContextBuilder builder = new SSLContextBuilder();
+            builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+            return new SSLConnectionSocketFactory(builder.build(), NoopHostnameVerifier.INSTANCE);
+        } catch (final Exception e) {
+            logger.warn("Failed to create TrustSelfSignedStrategy.", e);
+        }
+        return null;
+    }
+
     @Override
     public void destroy() {
         connectionMonitor.shutdown();
         apiMonitorTimer.cancel();
-        httpClient.getConnectionManager().shutdown();
+        try {
+            httpClient.close();
+        } catch (final IOException e) {
+            logger.warn("Failed to close HttpClient.", e);
+        }
     }
 
     @Override
@@ -293,16 +320,16 @@ public class RestApiOperation implements Operation {
         return jsonBuf.toString();
     }
 
-    private void callbackResultSuccess(List<Event> eventList) {
-        if (listenerList.size() > 0) {
+    private void callbackResultSuccess(final List<Event> eventList) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.successHandler(eventList);
             }
         }
     }
 
-    private void callbackResultError(List<Event> eventList) {
-        if (listenerList.size() > 0) {
+    private void callbackResultError(final List<Event> eventList) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.errorHandler(eventList);
             }
@@ -310,7 +337,7 @@ public class RestApiOperation implements Operation {
     }
 
     private void callbackResoted() {
-        if (listenerList.size() > 0) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.restoredHandler();
             }
@@ -319,7 +346,7 @@ public class RestApiOperation implements Operation {
 
     public static class ConnectionMonitor extends Thread {
 
-        private final ClientConnectionManager clientConnectionManager;
+        private final HttpClientConnectionManager clientConnectionManager;
 
         private volatile boolean shutdown = false;
 
@@ -328,7 +355,7 @@ public class RestApiOperation implements Operation {
         private final long idleConnectionTimeout;
 
         public ConnectionMonitor(
-                final ClientConnectionManager clientConnectionManager,
+                final HttpClientConnectionManager clientConnectionManager,
                 final long connectionCheckInterval,
                 final long idleConnectionTimeout) {
             super();
@@ -386,19 +413,17 @@ public class RestApiOperation implements Operation {
         }
 
         private boolean isReachable() {
-            boolean reached;
             try {
-                HttpHead request = new HttpHead(url);
-                HttpResponse response = httpClient.execute(request);
-                reached = true;
+                final HttpHead request = new HttpHead(url);
+                final HttpResponse response = httpClient.execute(request);
                 EntityUtils.consumeQuietly(response.getEntity());
-            } catch (ConnectTimeoutException e) {
-                reached = false;
-            } catch (Exception e) {
+                return true;
+            } catch (final ConnectTimeoutException e) {
+                // ignore
+            } catch (final Exception e) {
                 logger.warn("Failed to monitor api. {}", url);
-                reached = false;
             }
-            return reached;
+            return false;
         }
     }
 }
