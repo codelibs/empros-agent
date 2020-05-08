@@ -63,14 +63,14 @@ public class Main {
             agent.setOperation(getOperation());
             agent.setScanner(new FileScanner());
             if (!agent.scan()) {
-                System.out.println("Failed to start scan.");
+                logger.error("Failed to start scan.");
                 System.exit(1);
             }
             agent.destroy();
             logger.info("Application is finished.");
             System.exit(0);
         } else {
-            logger.warn("Unexpected args: " + command);
+            logger.warn("Unexpected args: {}", command);
         }
     }
 

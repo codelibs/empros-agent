@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EmprosAgent {
+
     private static final String AGENT_PROPERTIES = "agent.properties";
 
     private static final Logger logger = LoggerFactory

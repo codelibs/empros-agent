@@ -17,6 +17,7 @@ package org.codelibs.empros.agent.operation.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -251,7 +252,7 @@ public class RestApiOperation implements Operation {
         InputStream is = null;
         try {
             is = httpEntity.getContent();
-            return new String(InputStreamUtil.getBytes(is), "UTF-8");
+            return new String(InputStreamUtil.getBytes(is), StandardCharsets.UTF_8);
         } catch (final IOException e) {
             logger.warn("Failed to read a content.", e);
         } finally {

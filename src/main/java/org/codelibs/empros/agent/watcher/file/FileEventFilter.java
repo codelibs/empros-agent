@@ -27,13 +27,14 @@ import org.codelibs.empros.agent.event.EventFilter;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 
 public class FileEventFilter implements EventFilter{
-    private final String FILEWATCHER_PROPERTIES = "filewatcher.properties";
 
-    private final String EXCLUDE_KEY = "excludePath";
+    private static final String FILEWATCHER_PROPERTIES = "filewatcher.properties";
 
-    private final String EXCLUDE_NONE_FILEEXTENSION_KEY = "excludeNoneFileExtension";
+    private static final String EXCLUDE_KEY = "excludePath";
 
-    private List<String> excludePathList = new ArrayList<String>();
+    private static final String EXCLUDE_NONE_FILEEXTENSION_KEY = "excludeNoneFileExtension";
+
+    private List<String> excludePathList = new ArrayList<>();
 
     private boolean excludeNoneFileExtension;
 

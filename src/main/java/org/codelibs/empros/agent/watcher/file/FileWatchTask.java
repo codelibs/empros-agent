@@ -75,7 +75,7 @@ public class FileWatchTask extends Thread {
     public void run() {
 
         if (logger.isInfoEnabled()) {
-            logger.info("===== Started watching >> " + watchPath + " =====");
+            logger.info("===== Started watching >> {} =====", watchPath);
         }
 
         WatchService watcher;
@@ -107,8 +107,7 @@ public class FileWatchTask extends Thread {
                         } else if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
                             kind = OVERFLOW;
                         } else {
-                            logger.warn("unknown kind: {}", event.kind()
-                                    .toString());
+                            logger.warn("unknown kind: {}", event.kind());
                             continue;
                         }
 

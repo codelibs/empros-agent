@@ -6,13 +6,6 @@
 	<packaging>jar</packaging>
 	<name>Empros Agent</name>
 	<url>https://github.com/codelibs/empros-agent</url>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-		<!-- Elasticsearch -->
-		<elasticsearch.version>7.6.2</elasticsearch.version>
-		<elasticsearch.httpclient.version>7.6.2</elasticsearch.httpclient.version>
-	</properties>
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -29,6 +22,13 @@
 		<url>scm:git:git@github.com:codelibs/empros-agent.git</url>
 		<developerConnection>scm:git:git@github.com:codelibs/empros-agent.git</developerConnection>
 	</scm>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<!-- Elasticsearch -->
+		<elasticsearch.version>7.6.2</elasticsearch.version>
+		<elasticsearch.httpclient.version>7.6.2</elasticsearch.httpclient.version>
+	</properties>
 	<build>
 		<resources>
 			<resource>
@@ -59,6 +59,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.3.0</version>
 				<configuration>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
@@ -89,15 +90,7 @@
 					<encoding>UTF-8</encoding>
 					<docencoding>UTF-8</docencoding>
 					<charset>UTF-8</charset>
-					<links>
-						<link>http://docs.oracle.com/javase/6/docs/api/</link>
-						<link>http://docs.oracle.com/javaee/6/api/</link>
-						<link>http://aopalliance.sourceforge.net/doc/</link>
-						<link>http://www.csg.is.titech.ac.jp/~chiba/javassist/html/</link>
-						<link>http://s2container.seasar.org/2.4/s2-framework/ja/apidocs/</link>
-						<link>http://s2container.seasar.org/2.4/s2-extension/ja/apidocs/</link>
-						<link>http://s2container.seasar.org/2.4/s2-tiger/ja/apidocs/</link>
-					</links>
+					<locale>en_US</locale>
 				</configuration>
 				<executions>
 					<execution>
@@ -188,7 +181,6 @@
 		</repository>
 	</repositories>
 
-
 	<dependencies>
 		<dependency>
 			<groupId>commons-lang</groupId>
@@ -233,20 +225,22 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.codelibs</groupId>
-			<artifactId>corelib</artifactId>
-			<version>0.5.4</version>
-		</dependency>
-		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
 			<version>${elasticsearch.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.codelibs</groupId>
+			<artifactId>corelib</artifactId>
+			<version>0.5.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codelibs</groupId>
 			<artifactId>elasticsearch-httpclient</artifactId>
 			<version>${elasticsearch.httpclient.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>

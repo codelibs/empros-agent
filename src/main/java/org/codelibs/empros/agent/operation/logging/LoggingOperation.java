@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LoggingOperation implements Operation {
     private static final Logger logger = LoggerFactory.getLogger(LoggingOperation.class);
-    private final List<OperationListener> listenerList = new ArrayList<OperationListener>();
+    private final List<OperationListener> listenerList = new ArrayList<>();
     private final AtomicInteger eventCount = new AtomicInteger();
 
     @Override
@@ -46,7 +46,7 @@ public class LoggingOperation implements Operation {
 
     @Override
     public void destroy() {
-
+        // do nothing
     }
 
     private void callbackResultSuccess(final List<Event> eventList) {

@@ -48,7 +48,7 @@ public class Event extends HashMap<String, Object> implements Serializable {
         return super.hashCode();
     }
 
-    public interface EventComparator {
+    public interface EventComparator extends Serializable {
         boolean equals(Event self, Object target);
 
         int hashCode(Event self);
