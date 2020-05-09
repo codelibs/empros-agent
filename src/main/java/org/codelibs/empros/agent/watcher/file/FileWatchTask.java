@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the CodeLibs Project and the Others.
+ * Copyright 2012-2020 CodeLibs Project and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class FileWatchTask extends Thread {
     public void run() {
 
         if (logger.isInfoEnabled()) {
-            logger.info("===== Started watching >> " + watchPath + " =====");
+            logger.info("===== Started watching >> {} =====", watchPath);
         }
 
         WatchService watcher;
@@ -107,8 +107,7 @@ public class FileWatchTask extends Thread {
                         } else if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
                             kind = OVERFLOW;
                         } else {
-                            logger.warn("unknown kind: {}", event.kind()
-                                    .toString());
+                            logger.warn("unknown kind: {}", event.kind());
                             continue;
                         }
 

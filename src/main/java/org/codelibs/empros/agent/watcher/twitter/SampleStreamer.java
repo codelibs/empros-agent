@@ -1,3 +1,18 @@
+/*
+ * Copyright 2012-2020 CodeLibs Project and the Others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.codelibs.empros.agent.watcher.twitter;
 
 
@@ -26,29 +41,29 @@ public class SampleStreamer implements Watcher{
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    private final String ID = "tweetId";
+    private static final String ID = "tweetId";
 
-    private final String USER_SCREEN_NAME = "screenName";
+    private static final String USER_SCREEN_NAME = "screenName";
 
-    private final String TEXT = "text";
+    private static final String TEXT = "text";
 
-    private final String DATE = "date";
+    private static final String DATE = "date";
 
-    private final String LOCATION = "location";
+    private static final String LOCATION = "location";
 
-    private final String PLACE = "place";
+    private static final String PLACE = "place";
 
-    private final String USER_ID = "userId";
+    private static final String USER_ID = "userId";
 
-    private final String USER_TWEETNUM = "tweetNum";
+    private static final String USER_TWEETNUM = "tweetNum";
 
-    private final String USER_FOLLOWING = "following";
+    private static final String USER_FOLLOWING = "following";
 
-    private final String USER_FOLLOWERS = "followers";
+    private static final String USER_FOLLOWERS = "followers";
 
-    private final String USER_CREATEAT = "createAt";
+    private static final String USER_CREATEAT = "createAt";
 
-    private final String USER_LOCATION = "userLocation";
+    private static final String USER_LOCATION = "userLocation";
 
 
     @Override
@@ -66,16 +81,16 @@ public class SampleStreamer implements Watcher{
         stream = TwitterStreamFactory.getSingleton();
         StatusListener listener = new StatusListener() {
             @Override
-            public void onStatus(Status status) {
-                User user = status.getUser();
-                String timezone = user.getTimeZone();
-                String tweet = status.getText();
+            public void onStatus(final Status status) {
+                final User user = status.getUser();
+                final String timezone = user.getTimeZone();
+                final String tweet = status.getText();
 
                 boolean isJa = false;
                 if(timezone == null) {
-                    for(int i=0;i<tweet.length();i++) {
-                        char ch = tweet.charAt(i);
-                        Character.UnicodeBlock unicodeBlock = Character.UnicodeBlock.of(ch);
+                    for(int i = 0;i < tweet.length();i++) {
+                        final char ch = tweet.charAt(i);
+                        final Character.UnicodeBlock unicodeBlock = Character.UnicodeBlock.of(ch);
                         if(Character.UnicodeBlock.HIRAGANA.equals(unicodeBlock) ||
                                 Character.UnicodeBlock.KATAKANA.equals(unicodeBlock) ||
                                 Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS.equals(unicodeBlock) ||
@@ -92,7 +107,7 @@ public class SampleStreamer implements Watcher{
                 }
 
                 if(isJa && !tweet.startsWith("@")) {
-                    Event event = new Event();
+                    final Event event = new Event();
                     event.put(ID, status.getId());
                     event.put(USER_SCREEN_NAME, user.getScreenName());
                     event.put(TEXT, status.getText());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the CodeLibs Project and the Others.
+ * Copyright 2012-2020 CodeLibs Project and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,19 @@ package org.codelibs.empros.agent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.codelibs.core.lang.ClassUtil;
+import org.codelibs.core.lang.StringUtil;
 import org.codelibs.empros.agent.event.EventFilter;
 import org.codelibs.empros.agent.event.EventManager;
 import org.codelibs.empros.agent.operation.Operation;
 import org.codelibs.empros.agent.scanner.Scanner;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.codelibs.empros.agent.watcher.Watcher;
-import org.seasar.util.lang.ClassUtil;
-import org.seasar.util.lang.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EmprosAgent {
+
     private static final String AGENT_PROPERTIES = "agent.properties";
 
     private static final Logger logger = LoggerFactory
@@ -118,13 +119,15 @@ public class EmprosAgent {
 
         scanner.setEventManager(eventManager);
 
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         scanner.start();
 
         while (scanner.isRunning()) {
             try {
                 Thread.sleep(10 * 1000);
-            } catch (InterruptedException ignore) {}
+            } catch (InterruptedException ignore) {
+                // ignore
+            }
 
         }
 
@@ -132,7 +135,9 @@ public class EmprosAgent {
             try {
                 logger.info("waiting event process");
                 Thread.sleep(10 * 1000);
-            } catch (InterruptedException ignore) {}
+            } catch (InterruptedException ignore) {
+                // ignore
+            }
         }
 
         logger.info("Scan is finished. took:{} min", (System.currentTimeMillis() - start) / (60 * 1000));

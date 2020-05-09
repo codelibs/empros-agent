@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the CodeLibs Project and the Others.
+ * Copyright 2012-2020 CodeLibs Project and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class FileWatcher implements Watcher {
                     FILEWATCHER_PROPERTIES + ".kinds", key,
                     "create,modify,delete,overflow");
             final String[] kinds = kindStr.split(",");
-            final List<Kind<?>> kindList = new ArrayList<Kind<?>>(4);
+            final List<Kind<?>> kindList = new ArrayList<>(4);
             for (final String kind : kinds) {
                 if (StringUtils.isNotBlank(kind)) {
                     switch (kind.trim()) {
@@ -97,18 +97,16 @@ public class FileWatcher implements Watcher {
             final String modifierStr = PropertiesUtil.getAsString(
                     FILEWATCHER_PROPERTIES + ".modifiers", key, "");
             final String[] modifiers = modifierStr.split(",");
-            final List<WatchEvent.Modifier> modifierList = new ArrayList<WatchEvent.Modifier>(
+            final List<WatchEvent.Modifier> modifierList = new ArrayList<>(
                     4);
             for (final String modifier : modifiers) {
                 if (StringUtils.isNotBlank(modifier)) {
-                    switch (modifier.trim()) {
-                        case "fileTree":
-                            modifierList
-                                    .add(com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE);
-                            break;
-                        default:
-                            logger.warn("unknown modifier: {}", modifier);
-                            break;
+                    if (modifier.trim().equals("fileTree")) {
+                        modifierList
+                                .add(com.sun.nio.file.ExtendedWatchEventModifier.FILE_TREE);
+                    } else {
+                        logger.warn("unknown modifier: {}", modifier);
+                        break;
                     }
                 }
             }
@@ -149,6 +147,7 @@ public class FileWatcher implements Watcher {
             try {
                 fileWatchTask.join();
             } catch (final InterruptedException e) {
+                // ignore
             }
         }
         fileWatcherList.clear();

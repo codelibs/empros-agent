@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the CodeLibs Project and the Others.
+ * Copyright 2012-2020 CodeLibs Project and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,14 +63,14 @@ public class Main {
             agent.setOperation(getOperation());
             agent.setScanner(new FileScanner());
             if (!agent.scan()) {
-                System.out.println("Failed to start scan.");
+                logger.error("Failed to start scan.");
                 System.exit(1);
             }
             agent.destroy();
             logger.info("Application is finished.");
             System.exit(0);
         } else {
-            logger.warn("Unexpected args: " + command);
+            logger.warn("Unexpected args: {}", command);
         }
     }
 
@@ -87,16 +87,14 @@ public class Main {
     private static synchronized Operation getOperation() {
         final String apiType = PropertiesUtil
             .getAsString(EMPROSAPI_PROPERTIES, "apiType", "");
-        Operation operation;
         if (apiType.equals("es")) {
-            operation = new EsApiOperation();
+            return new EsApiOperation();
         } else if(apiType.equals("logging")) {
-            operation = new LoggingOperation();
+            return new LoggingOperation();
         } else {
-            operation = new RestApiOperation();
+            return new RestApiOperation();
         }
-        return operation;
-    }
+   }
 
     private static synchronized void removeAgent() {
         agent = null;

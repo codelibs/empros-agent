@@ -1,3 +1,18 @@
+/*
+ * Copyright 2012-2020 CodeLibs Project and the Others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.codelibs.empros.agent.scanner.file;
 
 import org.codelibs.core.lang.StringUtil;
@@ -36,10 +51,10 @@ public class FileScanner implements Scanner {
             }
             Path path = Paths.get(scanPath);
             if (!Files.isDirectory(path)) {
-                logger.warn("Not directory. {}", path.toAbsolutePath().toString());
+                logger.warn("Not directory. {}", path.toAbsolutePath());
                 continue;
             }
-            logger.info("Add path:{}", path.toAbsolutePath().toString());
+            logger.info("Add path:{}", path.toAbsolutePath());
             targetDirs.add(path);
         }
     }
@@ -67,10 +82,8 @@ public class FileScanner implements Scanner {
         if (!running.get()) {
             return false;
         }
-        if (targetDirs.size() == 0) {
-            if (!thread.executing.get()) {
-                return false;
-            }
+        if (targetDirs.isEmpty() && !thread.executing.get()) {
+            return false;
         }
         return true;
     }
@@ -86,11 +99,11 @@ public class FileScanner implements Scanner {
                 final Path targetDir = targetDirs.poll();
                 if (targetDir == null) {
                     executing.set(false);
-                    logger.info("Finish FileScanThread");
+                    logger.info("Finished FileScanThread");
                     break;
                 }
                 if (!Files.isDirectory(targetDir)) {
-                    logger.warn("Invalid directory. %s", targetDir.toString());
+                    logger.warn("Invalid directory. {}", targetDir);
                 }
                 try {
                     Files.walkFileTree(targetDir, new SimpleFileVisitor<Path>() {
@@ -135,7 +148,7 @@ public class FileScanner implements Scanner {
                         }
                     });
                     eventManager.submit();
-                } catch (Throwable t) {
+                } catch (final Throwable t) {
                     logger.warn("File scan error.", t);
                 }
             }

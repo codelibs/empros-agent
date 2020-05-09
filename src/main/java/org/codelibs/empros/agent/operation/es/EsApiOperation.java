@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the CodeLibs Project and the Others.
+ * Copyright 2012-2020 CodeLibs Project and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,59 +17,49 @@ package org.codelibs.empros.agent.operation.es;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.codelibs.elasticsearch.client.HttpClient;
 import org.codelibs.empros.agent.event.Event;
 import org.codelibs.empros.agent.exception.EmprosSystemException;
 import org.codelibs.empros.agent.listener.OperationListener;
 import org.codelibs.empros.agent.operation.Operation;
 import org.codelibs.empros.agent.util.PropertiesUtil;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
-import org.seasar.util.lang.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EsApiOperation implements Operation {
 
-    private static final Logger logger = LoggerFactory
-            .getLogger(EsApiOperation.class);
+    private static final Logger logger = LoggerFactory.getLogger(EsApiOperation.class);
 
     private static final String EMPROSAPI_PROPERTIES = "emprosapi.properties";
 
-    private final List<Map<String, Object>> esHosts;
+    private static final String ES_FIELD_ENCODING = StandardCharsets.UTF_8.toString();
 
-    private final String esClusterName;
+    private final String esHosts;
 
     private final String esIndex;
 
-    private final String esType;
-
     private final int requestInterval;
 
-    private final Settings settings;
+    private final Client client;
 
-    private final TransportClient client;
-
-    private final List<OperationListener> listenerList = new ArrayList<OperationListener>();
+    private final List<OperationListener> listenerList = new ArrayList<>();
 
     private final ApiMonitor apiMonitor;
 
@@ -79,56 +69,42 @@ public class EsApiOperation implements Operation {
 
     private final AtomicBoolean apiAvailable = new AtomicBoolean(false);
 
-    private final String ES_FIELD_ENCODING = "UTF-8";
-
     public EsApiOperation() {
-        esHosts = Stream.of(PropertiesUtil
-                .getAsString(EMPROSAPI_PROPERTIES, "esHosts", "").split(","))
-                .map(s -> new LinkedHashMap<String, Object>() {
-                    {
-                        final String[] pair = s.split(":");
-                        if (StringUtil.isEmpty(pair[1])) {
-                            pair[1] = "9300";
-                        }
-                        put("name", pair[0]);
-                        put("port", Integer.parseInt(pair[1]));
-                    }
-                }).collect(Collectors.toList());
+        esHosts = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esHosts", "");
+
         if (esHosts.isEmpty()) {
             throw new EmprosSystemException("esHosts is empty.");
         }
-        esClusterName = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esClusterName", "elasticsearch");
+
         esIndex = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esIndex", "empros");
-        esType = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esType", "event");
+        //esType = PropertiesUtil.getAsString(EMPROSAPI_PROPERTIES, "esType", "event");
 
         requestInterval = PropertiesUtil.getAsInt(EMPROSAPI_PROPERTIES,
                 "requestInterval", 100);
         apiMonitorInterval = PropertiesUtil.getAsLong(EMPROSAPI_PROPERTIES,
-                "apiMonitorInterval", 10 * 1000);
+                "apiMonitorInterval", 10 * 1000L);
 
-        settings = Settings.builder()
-                .put("cluster.name", esClusterName)
-                .put("client.transport.ping_timeout", 10, TimeUnit.SECONDS)
-                .build();
-        client = new PreBuiltTransportClient(settings);
-        for (final Map<String, Object> host : esHosts) {
-            try {
-                client.addTransportAddress(new InetSocketTransportAddress(
-                        InetAddress.getByName((String)host.get("name")), (int)host.get("port")));
-            } catch (UnknownHostException e) {
-                logger.warn("Unknown host: {}", host, e);
-            }
-        }
+        client = createHttpClient(esHosts);
 
         apiMonitor = new ApiMonitor();
         apiMonitorTimer = new Timer();
         apiMonitorTimer.schedule(apiMonitor, 0, apiMonitorInterval);
     }
 
+    protected Client createHttpClient(final String host) {
+        final Settings.Builder builder = Settings.builder().putList("http.hosts", host.split(","))
+                .put("processors", PropertiesUtil.getAsInt(EMPROSAPI_PROPERTIES, "availableProcessors", Runtime.getRuntime().availableProcessors()));
+        return new HttpClient(builder.build(), null);
+    }
+
     @Override
     public void destroy() {
         apiMonitorTimer.cancel();
-        client.close();
+        try {
+            client.close();
+        } catch (final ElasticsearchException e) {
+            logger.warn("Failed to close Client: {}", client, e);
+        }
     }
 
     @Override
@@ -157,13 +133,12 @@ public class EsApiOperation implements Operation {
                                     ES_FIELD_ENCODING));
                 }
                 builder.endObject();
-                bulkRequest.add(client.prepareIndex(esIndex, esType)
-                        .setSource(builder));
+                bulkRequest.add(new IndexRequest(esIndex).source(builder));
                 if (logger.isDebugEnabled()) {
                     logger.debug("Event: {}", event);
                 }
             }
-            final BulkResponse bulkResponse = bulkRequest.get();
+            final BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 
             if (bulkResponse.hasFailures()) {
                 isSuccess = false;
@@ -194,7 +169,7 @@ public class EsApiOperation implements Operation {
     }
 
     private void callbackResultSuccess(List<Event> eventList) {
-        if (listenerList.size() > 0) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.successHandler(eventList);
             }
@@ -202,7 +177,7 @@ public class EsApiOperation implements Operation {
     }
 
     private void callbackResultError(List<Event> eventList) {
-        if (listenerList.size() > 0) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.errorHandler(eventList);
             }
@@ -210,7 +185,7 @@ public class EsApiOperation implements Operation {
     }
 
     private void callbackResoted() {
-        if (listenerList.size() > 0) {
+        if (!listenerList.isEmpty()) {
             for (OperationListener listener : listenerList) {
                 listener.restoredHandler();
             }
@@ -219,7 +194,7 @@ public class EsApiOperation implements Operation {
 
     public static class ConnectionMonitor extends Thread {
 
-        private final ClientConnectionManager clientConnectionManager;
+        private final HttpClientConnectionManager clientConnectionManager;
 
         private volatile boolean shutdown = false;
 
@@ -228,7 +203,7 @@ public class EsApiOperation implements Operation {
         private final long idleConnectionTimeout;
 
         public ConnectionMonitor(
-                final ClientConnectionManager clientConnectionManager,
+                final HttpClientConnectionManager clientConnectionManager,
                 final long connectionCheckInterval,
                 final long idleConnectionTimeout) {
             super();
@@ -274,12 +249,12 @@ public class EsApiOperation implements Operation {
             if (!after) {
                 if (after != before) {
                     if (logger.isInfoEnabled()) {
-                        logger.info("Api Monitoring. Server is not available. " + esHosts);
+                        logger.info("Api Monitoring. Server is not available. {}", esHosts);
                     }
                 }
             } else if (after != before) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("Api Monitoring. Server was restored. " + esHosts);
+                    logger.info("Api Monitoring. Server was restored. {}", esHosts);
                 }
                 callbackResoted();
             }
@@ -287,13 +262,11 @@ public class EsApiOperation implements Operation {
         }
 
         private boolean isReachable() {
-            List<DiscoveryNode> connectedNodes = client.connectedNodes();
-            if (connectedNodes.isEmpty()) {
-                logger.warn("Failed to monitor api. " + esHosts);
+            if (!client.prepareGet().setIndex(esIndex).execute().actionGet().isExists()) {
+                logger.warn("Failed to monitor api. {}", esHosts);
                 return false;
-            } else {
-                return true;
             }
+            return true;
         }
     }
 
