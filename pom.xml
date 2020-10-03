@@ -9,7 +9,7 @@
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -155,12 +155,12 @@
 		<pluginRepository>
 			<id>maven.seasar.org</id>
 			<name>The Seasar Foundation Maven2 Repository</name>
-			<url>http://maven.seasar.org/maven2/</url>
+			<url>https://maven.seasar.org/maven2/</url>
 		</pluginRepository>
 		<pluginRepository>
 			<id>maven-snapshot.seasar.org</id>
 			<name>The Seasar Foundation Maven2 Repository</name>
-			<url>http://maven.seasar.org/maven2-snapshot/</url>
+			<url>https://maven.seasar.org/maven2-snapshot/</url>
 		</pluginRepository>
 	</pluginRepositories>
 	<repositories>
@@ -172,12 +172,12 @@
 		<repository>
 			<id>maven.seasar.org</id>
 			<name>The Seasar Foundation Maven2 Repository</name>
-			<url>http://maven.seasar.org/maven2/</url>
+			<url>https://maven.seasar.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>maven-snapshot.seasar.org</id>
 			<name>The Seasar Foundation Maven2 Repository</name>
-			<url>http://maven.seasar.org/maven2-snapshot/</url>
+			<url>https://maven.seasar.org/maven2-snapshot/</url>
 		</repository>
 	</repositories>
 
