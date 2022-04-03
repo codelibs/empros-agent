@@ -1,0 +1,10 @@
+<service>
+  <id>empros-agent</id>
+  <name>EmprosAgent</name>
+  <description>This service runs empros agent. Created by winsw.</description>
+  <env name="EMPROS_HOME" value="%BASE%"/>
+  <env name="JAVA_HOME" value="%BASE%\jdk-11"/>
+  <executable>%BASE%\jdk-11\bin\java</executable>
+  <arguments>-classpath "%EMPROS_HOME%\config;%EMPROS_HOME%\empros-agent-jar-with-dependencies.jar" -Xmx256m org.codelibs.empros.agent.Main start</arguments>
+  <log mode="roll"></log>
+</service>
