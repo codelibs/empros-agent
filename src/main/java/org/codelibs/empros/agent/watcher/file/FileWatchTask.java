@@ -25,6 +25,7 @@ import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Date;
+import java.util.List;
 
 import org.codelibs.empros.agent.event.Event;
 import org.codelibs.empros.agent.event.Event.EventComparator;
@@ -60,8 +61,11 @@ public class FileWatchTask extends Thread {
 
     private final WatchEvent.Modifier[] modifiers;
 
+    private final List<PathReplaceRule> pathReplaceRules;
+
     public FileWatchTask(final EventManager manager, final Path watchPath,
-                         final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers) {
+                         final Kind<?>[] kinds, final WatchEvent.Modifier[] modifiers,
+                         final List<PathReplaceRule> pathReplaceRules) {
         super();
         setPriority(Thread.MAX_PRIORITY);
 
@@ -69,6 +73,7 @@ public class FileWatchTask extends Thread {
         this.watchPath = watchPath;
         this.kinds = kinds;
         this.modifiers = modifiers;
+        this.pathReplaceRules = pathReplaceRules;
     }
 
     @Override
@@ -117,7 +122,7 @@ public class FileWatchTask extends Thread {
                             logger.debug("{}: count={} {}", event.kind(), event.count(), path);
                         }
 
-                        final Event fileEvent = createEvent(kind, path, timestamp);
+                        final Event fileEvent = createEvent(kind, path, timestamp, pathReplaceRules);
                         manager.addEvent(fileEvent);
                     }
 
@@ -142,9 +147,14 @@ public class FileWatchTask extends Thread {
         }
     }
 
-    public static Event createEvent(final String kind, final Path path, final long timestamp) {
+    public static Event createEvent(final String kind, final Path path, final long timestamp, final List<PathReplaceRule> pathReplaceRules) {
         final Event fileEvent = new Event();
-        fileEvent.put(FILE, path.toString().replace("\\", "/"));
+        String convertedPath = path.toString().replace("\\", "/");
+        for (final PathReplaceRule rule: pathReplaceRules) {
+            convertedPath = convertedPath.replace(rule.getOldPath(), rule.getNewPath());
+        }
+
+        fileEvent.put(FILE, convertedPath);
         fileEvent.put(KIND, kind);
         fileEvent.put(TIMESTAMP, timestamp);
         fileEvent.setEventComparator(EVENT_COMPARATOR);

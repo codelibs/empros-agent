@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang.StringUtils;
+import org.codelibs.core.lang.StringUtil;
 import org.codelibs.empros.agent.event.EventManager;
 import org.codelibs.empros.agent.util.PropertiesUtil;
 import org.codelibs.empros.agent.watcher.Watcher;
@@ -49,6 +50,27 @@ public class FileWatcher implements Watcher {
     public void start() {
         if (started.getAndSet(true)) {
             return;
+        }
+
+        final List<PathReplaceRule> pathReplaceRules = new ArrayList<>();
+        int replaceCount = 1;
+        while(true) {
+            final String oldKey = "pathReplaceOld" + replaceCount;
+            final String pathReplaceOld = PropertiesUtil.getAsString(
+                    FILEWATCHER_PROPERTIES, oldKey, null);
+            if (StringUtil.isBlank(pathReplaceOld)) {
+                break;
+            }
+            final String newKey = "pathReplaceNew" + replaceCount;
+            final String pathReplaceNew = PropertiesUtil.getAsString(
+                    FILEWATCHER_PROPERTIES, newKey, null);
+            if (pathReplaceNew == null) {
+                logger.warn("pathReplaceNew{} is null. old:{}", replaceCount, pathReplaceOld);
+                break;
+            }
+            pathReplaceRules.add(new PathReplaceRule(pathReplaceOld, pathReplaceNew));
+
+            replaceCount++;
         }
 
         int count = 0;
@@ -114,7 +136,7 @@ public class FileWatcher implements Watcher {
             fileWatcherList.add(new FileWatchTask(eventManager, file.toPath(),
                     kindList.toArray(new Kind[kindList.size()]), modifierList
                     .toArray(new WatchEvent.Modifier[modifierList
-                            .size()])));
+                            .size()]), pathReplaceRules));
 
         }
 

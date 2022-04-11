@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,7 +127,7 @@ public class FileScanner implements Scanner {
 
                         @Override
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                            Event event = FileWatchTask.createEvent(FileWatchTask.CREATE, file, FileScanner.this.timestamp);
+                            Event event = FileWatchTask.createEvent(FileWatchTask.CREATE, file, FileScanner.this.timestamp, Collections.emptyList());
                             eventManager.addEvent(event);
                             counter++;
                             if (counter > 1000) {
