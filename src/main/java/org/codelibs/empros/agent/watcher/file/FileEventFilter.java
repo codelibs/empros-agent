@@ -32,21 +32,35 @@ public class FileEventFilter implements EventFilter{
 
     private static final String EXCLUDE_KEY = "excludePath";
 
+    private static final String INCLUDE_KEY = "includePath";
+
     private static final String EXCLUDE_NONE_FILEEXTENSION_KEY = "excludeNoneFileExtension";
 
-    private List<String> excludePathList = new ArrayList<>();
+    private List<Pattern> excludePathList = new ArrayList<>();
+
+    private List<Pattern> includePathList = new ArrayList<>();
 
     private boolean excludeNoneFileExtension;
 
     public FileEventFilter() {
-        int count = 1;
+        int excludeCount = 1;
         while (true) {
-            final String excludePath = PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, EXCLUDE_KEY + count, null);
+            final String excludePath = PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, EXCLUDE_KEY + excludeCount, null);
             if (StringUtils.isBlank(excludePath)) {
                 break;
             }
-            excludePathList.add(excludePath);
-            count++;
+            excludePathList.add(Pattern.compile(excludePath));
+            excludeCount++;
+        }
+
+        int includeCount = 1;
+        while (true) {
+            final String includePath = PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, INCLUDE_KEY + includeCount, null);
+            if (StringUtils.isBlank(includePath)) {
+                break;
+            }
+            excludePathList.add(Pattern.compile(includePath));
+            includeCount++;
         }
 
         excludeNoneFileExtension = Boolean.parseBoolean(PropertiesUtil.getAsString(FILEWATCHER_PROPERTIES, EXCLUDE_NONE_FILEEXTENSION_KEY, "false"));
@@ -60,6 +74,9 @@ public class FileEventFilter implements EventFilter{
         }
         if (ret && !excludePathList.isEmpty()) {
             ret = filterByExcludePath(target);
+        }
+        if (ret && !includePathList.isEmpty()) {
+            ret = filterByIncludePath(target);
         }
 
         return ret ? target : null;
@@ -77,15 +94,26 @@ public class FileEventFilter implements EventFilter{
     private boolean filterByExcludePath(final Event event) {
         final String path = (String) event.get(FileWatchTask.FILE);
         if (StringUtils.isNotBlank(path)) {
-            for (final String excludePath : excludePathList) {
-                final Pattern p = Pattern.compile(excludePath);
-                final Matcher m = p.matcher(path);
+            for (final Pattern excludePattern : excludePathList) {
+                final Matcher m = excludePattern.matcher(path);
                 if(m.find()) {
                     return false;
                 }
             }
         }
-
         return true;
+    }
+
+    private boolean filterByIncludePath(final Event event) {
+        final String path = (String) event.get(FileWatchTask.FILE);
+        if (StringUtils.isNotBlank(path)) {
+            for (final Pattern includePattern : includePathList) {
+                final Matcher m = includePattern.matcher(path);
+                if(m.find()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
