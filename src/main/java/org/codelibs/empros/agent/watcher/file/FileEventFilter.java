@@ -59,7 +59,7 @@ public class FileEventFilter implements EventFilter{
             if (StringUtils.isBlank(includePath)) {
                 break;
             }
-            excludePathList.add(Pattern.compile(includePath));
+            includePathList.add(Pattern.compile(includePath));
             includeCount++;
         }
 
