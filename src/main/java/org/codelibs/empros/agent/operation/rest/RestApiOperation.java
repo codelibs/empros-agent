@@ -26,7 +26,7 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -306,10 +306,10 @@ public class RestApiOperation implements Operation {
                     jsonBuf.append(',');
                 }
                 jsonBuf.append('\"');
-                jsonBuf.append(StringEscapeUtils.escapeJavaScript(entry
+                jsonBuf.append(StringEscapeUtils.escapeEcmaScript(entry
                         .getKey()));
                 jsonBuf.append("\":\"");
-                jsonBuf.append(StringEscapeUtils.escapeJavaScript(entry
+                jsonBuf.append(StringEscapeUtils.escapeEcmaScript(entry
                         .getValue().toString().replace("\'", "")));
                 jsonBuf.append('\"');
             }

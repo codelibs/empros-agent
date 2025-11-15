@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codelibs.empros.agent.event.Event;
 import org.codelibs.empros.agent.event.EventFilter;
 import org.codelibs.empros.agent.util.PropertiesUtil;
