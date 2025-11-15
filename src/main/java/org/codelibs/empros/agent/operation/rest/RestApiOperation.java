@@ -306,10 +306,10 @@ public class RestApiOperation implements Operation {
                     jsonBuf.append(',');
                 }
                 jsonBuf.append('\"');
-                jsonBuf.append(StringEscapeUtils.escapeJavaScript(entry
+                jsonBuf.append(StringEscapeUtils.escapeEcmaScript(entry
                         .getKey()));
                 jsonBuf.append("\":\"");
-                jsonBuf.append(StringEscapeUtils.escapeJavaScript(entry
+                jsonBuf.append(StringEscapeUtils.escapeEcmaScript(entry
                         .getValue().toString().replace("\'", "")));
                 jsonBuf.append('\"');
             }
