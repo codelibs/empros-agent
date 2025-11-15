@@ -26,8 +26,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- Elasticsearch -->
-		<elasticsearch.version>7.17.26</elasticsearch.version>
-		<elasticsearch.httpclient.version>7.17.26</elasticsearch.httpclient.version>
+		<elasticsearch.version>7.6.2</elasticsearch.version>
+		<elasticsearch.httpclient.version>7.6.2</elasticsearch.httpclient.version>
 	</properties>
 	<build>
 		<resources>
@@ -212,12 +212,12 @@
 		<dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
-            <version>4.1.2</version>
+            <version>4.0.7</version>
         </dependency>
         <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-stream</artifactId>
-            <version>4.1.2</version>
+            <version>4.0.7</version>
         </dependency>
 		<dependency>
 			<groupId>junit</groupId>
